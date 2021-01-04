@@ -2,21 +2,21 @@
 <rss version="2.0">
     <channel>
         <title>Blended ZIO Blog</title>
-        <link>https://blended-zio.github.io/blog</link>
+        <link>https://blended-zio.github.io/blended-zio/blog</link>
         <description>Blended ZIO Blog</description>
         <lastBuildDate>Mon, 28 Sep 2020 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <item>
             <title><![CDATA[Using ZIO Logging]]></title>
-            <link>https://blended-zio.github.io/blended-zio/blog/zio-logging</link>
+            <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-logging</link>
             <guid>zio-logging</guid>
             <pubDate>Mon, 28 Sep 2020 00:00:00 GMT</pubDate>
             <description><![CDATA[The complete source code used in this article can be found on github]]></description>
         </item>
         <item>
             <title><![CDATA[Welcome]]></title>
-            <link>https://blended-zio.github.io/blended-zio/blog/welcome</link>
+            <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/welcome</link>
             <guid>welcome</guid>
             <pubDate>Thu, 30 May 2019 00:00:00 GMT</pubDate>
             <description><![CDATA[Blog features are powered by the blog plugin. Simply add files to the blog directory. It supports tags as well!]]></description>
