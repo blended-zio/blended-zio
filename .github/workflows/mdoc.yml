@@ -12,6 +12,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
       - uses: olafurpg/setup-gpg@v3
-      - run: sbt docs/docusaurusPublishGhpages
+      - run: |
+          sbt doc docs/mdoc
+          cd website 
+          yarn deploy
         env:
-          GIT_DEPLOY_KEY: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USER: atooni
+          GIT_DEPLOY_KEY: ${{ secrets.GITHUB_DEPLOY_KEY }}
