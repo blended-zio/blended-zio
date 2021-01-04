@@ -1,8 +1,8 @@
 module.exports = {
   title: 'Blended ZIO',
   tagline: 'Composable integration flows',
-  url: 'https://blended-zio.github.io/blended-zio/',
-  baseUrl: '/',
+  url: 'https://blended-zio.github.io',
+  baseUrl: '/blended-zio/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
