@@ -1,7 +1,9 @@
 package blended.zio.jmx
 
-import scala.jdk.CollectionConverters.DictionaryHasAsScala
+import scala.collection.mutable
 import javax.management.ObjectName
+import java.util.function.BiConsumer
+import scala.collection.compat._
 import zio._
 
 class InvalidObjectNameFormatException(name: String) extends Exception(s"Value [${name}] is not a valid object name")
@@ -10,8 +12,20 @@ object JmxObjectName {
 
   val defaultDomain = "blended"
 
-  def fromObjectName(on: ObjectName): JmxObjectName =
-    JmxObjectName(on.getDomain, on.getKeyPropertyList.asScala.toMap)
+  def fromObjectName(on: ObjectName): JmxObjectName = {
+
+    val props = mutable.Map.empty[String, String]
+
+    on.getKeyPropertyList()
+      .forEach(new BiConsumer[String, String]() {
+        override def accept(k: String, v: String) = {
+          props.put(k, v)
+          ()
+        }
+      })
+
+    JmxObjectName(on.getDomain, props.toMap)
+  }
 
   private def parseMapEffect(s: String): ZIO[Any, Throwable, Map[String, String]] = for {
     parts <- ZIO.effectTotal(s.split(","))

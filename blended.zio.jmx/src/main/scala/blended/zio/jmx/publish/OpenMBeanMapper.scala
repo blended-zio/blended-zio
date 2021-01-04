@@ -7,6 +7,7 @@ import javax.management.openmbean._
 import javax.management.{ DynamicMBean, MBeanNotificationInfo, ObjectName }
 
 import scala.jdk.CollectionConverters._
+import scala.collection.compat._
 
 private[publish] class OpenMBeanMapper() {
   import OpenMBeanMapper._

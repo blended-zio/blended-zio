@@ -4,8 +4,10 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  private val Scala212 = "2.12.11"
+  private val Scala212 = "2.12.12"
   private val Scala213 = "2.13.4"
+
+  private val ScalaDefault = Scala213
 
   private val stdOptions = Seq(
     "-encoding",
@@ -26,11 +28,12 @@ object BuildHelper {
 
   private val stdOpts213 = Seq(
     "-Wunused:imports",
-    "-Wvalue-discard",
     "-Wunused:patvars",
     "-Wunused:privates",
     "-Wunused:params",
-    "-Wvalue-discard"
+    "-Wunused:nowarn",
+    "-Wvalue-discard",
+    "-Wconf:cat=unused-imports&src=blended.zio.jmx.JmxObjectName.scala:s,cat=unused-imports&src=blended.zio.jmx.publish.OpenMBeanMapper.scala:s"
   )
 
   private val stdOptsUpto212 = Seq(
@@ -44,10 +47,7 @@ object BuildHelper {
     "-Ywarn-unused-import"
   )
 
-  private def silencerVersion(scalaVersion: String) =
-    if (scalaVersion.startsWith("2.12") || scalaVersion.startsWith("2.13.1") || scalaVersion.startsWith("2.13.2"))
-      "1.6.0"
-    else "1.7.1"
+  private def silencerVersion = "1.7.1"
 
   private def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
@@ -77,21 +77,28 @@ object BuildHelper {
     Seq(
       name := s"$prjName",
       crossScalaVersions := Seq(Scala212, Scala213),
-      scalaVersion in ThisBuild := Scala213,
+      scalaVersion in ThisBuild := ScalaDefault,
       scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
       skip.in(publish) := false,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
       libraryDependencies ++=
         Seq(
-          "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2",
-          ("com.github.ghik"        % "silencer-lib"            % silencerVersion(scalaVersion.value) % Provided)
-            .cross(CrossVersion.full),
-          compilerPlugin(
-            ("com.github.ghik"      % "silencer-plugin"         % silencerVersion(scalaVersion.value)).cross(CrossVersion.full)
-          ),
           compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
-        ),
+        ) ++ extraDeps(scalaVersion.value),
       incOptions ~= (_.withLogRecompileOnMacro(false)),
       parallelExecution in Test := false
     )
+
+  private def extraDeps(scVersion: String) =
+    CrossVersion.partialVersion(scVersion) match {
+      case Some((2, 12)) =>
+        Seq(
+          ("com.github.ghik"   % "silencer-lib"    % silencerVersion % Provided)
+            .cross(CrossVersion.full),
+          compilerPlugin(
+            ("com.github.ghik" % "silencer-plugin" % silencerVersion).cross(CrossVersion.full)
+          )
+        )
+      case _             => Seq.empty
+    }
 }
