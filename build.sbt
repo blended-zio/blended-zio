@@ -2,11 +2,12 @@ import bloop.shaded.ch.epfl.scala.bsp4j.BuildTargetIdentifier
 import sbt._
 import sbt.Keys._
 import BuildHelper._
+import Dependencies._
 
 inThisBuild(
   List(
-    organization := "dev.zio",
-    homepage := Some(url("https://zio.github.io/zio.zmx/")),
+    organization := "de.wayofquality",
+    homepage := Some(url("https://blended-zio.github.io/")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
       Developer(
@@ -28,16 +29,6 @@ inThisBuild(
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
-val zioVersion = "1.0.3"
-
-libraryDependencies ++= Seq(
-  "dev.zio"      %% "zio"          % zioVersion,
-  "dev.zio"      %% "zio-nio"      % "1.0.0-RC9",
-  "dev.zio"      %% "zio-test"     % zioVersion % "test",
-  "dev.zio"      %% "zio-test-sbt" % zioVersion % "test",
-  "org.polynote" %% "uzhttp"       % "0.2.6"    % "test"
-)
-
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 resolvers += Resolver.sonatypeRepo("snapshots")
@@ -45,40 +36,44 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 lazy val root =
   (project in file("."))
     .settings(
-      stdSettings("zio.zmx")
+      stdSettings("blended.zio")
     )
-    .settings(buildInfoSettings("zio.zmx"))
+    .settings(buildInfoSettings("blended.zio"))
     .enablePlugins(BuildInfoPlugin)
+    .aggregate(blendedJmx, docs)
 
-lazy val jmx =
-  (project in file("examples"))
+lazy val blendedJmx =
+  (project in file("blended.zio.jmx"))
     .settings(
-      stdSettings("zio.zmx")
+      stdSettings("blended.zio.jmx")
     )
     .settings(
-      skip.in(publish) := false,
       libraryDependencies ++= Seq(
-        "dev.zio"      %% "zio"    % zioVersion,
-        "org.polynote" %% "uzhttp" % "0.2.6"
+        zioCore,
+        zioLog,
+        logbackClassic % Test,
+        logbackCore    % Test,
+        zioLogSlf4j    % Test,
+        zioTest        % Test,
+        zioTestSbt     % Test
       )
     )
-    .dependsOn(root)
 
 lazy val docs = project
-  .in(file("zio-zmx-docs"))
+  .in(file("blended-zio-docs"))
   .settings(
     skip.in(publish) := true,
-    moduleName := "zio.zmx-docs",
+    moduleName := "blended-zio.blended-zio-docs",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
-      "dev.zio"      %% "zio"    % zioVersion,
-      "org.polynote" %% "uzhttp" % "0.2.6"
+      zioCore,
+      uzHttp
     ),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(root),
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(blendedJmx),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
     cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value
   )
-  .dependsOn(root, examples)
+  .dependsOn(blendedJmx)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
