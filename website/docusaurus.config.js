@@ -6,11 +6,15 @@ module.exports = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'blended-zio', // Usually your GitHub org/user name.
+  projectName: 'blended-zio', // Usually your repo name.
   themeConfig: {
+    prism: {
+      theme: require('prism-react-renderer/themes/palenight'),
+      additionalLanguages: ['scala'],
+    },
     navbar: {
-      title: 'My Site',
+      title: 'Blended ZIO',
       logo: {
         alt: 'My Site Logo',
         src: 'img/logo.svg',
@@ -22,9 +26,9 @@ module.exports = {
           label: 'Docs',
           position: 'left',
         },
-        {to: 'blog', label: 'Blog', position: 'left'},
+        { to: 'blog', label: 'Blog', position: 'left' },
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/blended-zio/blended-zio',
           label: 'GitHub',
           position: 'right',
         },
@@ -72,12 +76,12 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/blended-zio/blended-zio',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} blended-zio - Built with Docusaurus.`,
     },
   },
   presets: [
@@ -88,16 +92,18 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:
-            'https://github.com/facebook/docusaurus/edit/master/website/',
+            'https://github.com/blended-zio/blended-zio/edit/master/website/',
         },
         blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
+          showReadingTime: false,
           editUrl:
-            'https://github.com/facebook/docusaurus/edit/master/website/blog/',
+            'https://github.com/blended-zio/blended-zio/edit/master/website/blog/',
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: [
+            require.resolve('./src/css/custom.css'),
+            require.resolve('./node_modules/prism-themes/themes/prism-darcula.css')
+          ],
         },
       },
     ],
