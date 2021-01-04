@@ -2,7 +2,7 @@
 <rss version="2.0">
     <channel>
         <title>Blended ZIO Blog</title>
-        <link>https://blended-zio.github.io/blended-zio/blog</link>
+        <link>https://blended-zio.github.io/blog</link>
         <description>Blended ZIO Blog</description>
         <lastBuildDate>Mon, 28 Sep 2020 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>

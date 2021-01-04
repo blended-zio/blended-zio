@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://blended-zio.github.io/blended-zio/blog</id>
+    <id>https://blended-zio.github.io/blog</id>
     <title>Blended ZIO Blog</title>
     <updated>2020-09-28T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://blended-zio.github.io/blended-zio/blog"/>
+    <link rel="alternate" href="https://blended-zio.github.io/blog"/>
     <subtitle>Blended ZIO Blog</subtitle>
-    <icon>https://blended-zio.github.io/blended-zio/img/favicon.ico</icon>
+    <icon>https://blended-zio.github.io/img/favicon.ico</icon>
     <entry>
         <title type="html"><![CDATA[Using ZIO Logging]]></title>
         <id>zio-logging</id>
