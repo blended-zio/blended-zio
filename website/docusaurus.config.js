@@ -1,7 +1,7 @@
 module.exports = {
-  title: 'My Site',
-  tagline: 'The tagline of my site',
-  url: 'https://your-docusaurus-test-site.com',
+  title: 'Blended ZIO',
+  tagline: 'Composable integration flows',
+  url: 'https://blended-zio.github.io/blended-zio/',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -10,23 +10,23 @@ module.exports = {
   projectName: 'blended-zio', // Usually your repo name.
   themeConfig: {
     prism: {
-      theme: require('prism-react-renderer/themes/palenight'),
+      theme: require('prism-react-renderer/themes/nightOwl'),
       additionalLanguages: ['scala'],
     },
     navbar: {
-      title: 'Blended ZIO',
+      //title: 'Blended ZIO',
       logo: {
-        alt: 'My Site Logo',
-        src: 'img/logo.svg',
+        alt: 'Blended ZIO',
+        src: 'img/Logos/svg/black_no_background.svg',
       },
       items: [
         {
           to: 'docs/',
           activeBasePath: 'docs',
           label: 'Docs',
-          position: 'left',
+          position: 'right',
         },
-        { to: 'blog', label: 'Blog', position: 'left' },
+        { to: 'blog', label: 'Blog', position: 'right' },
         {
           href: 'https://github.com/blended-zio/blended-zio',
           label: 'GitHub',
@@ -54,16 +54,12 @@ module.exports = {
           title: 'Community',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
               label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              href: 'https://discord.gg/jaHWkWqn',
             },
             {
-              label: 'Twitter',
-              href: 'https://twitter.com/docusaurus',
+              label: 'Discussions',
+              href: 'https://github.com/blended-zio/blended-zio/discussions',
             },
           ],
         },
@@ -81,7 +77,7 @@ module.exports = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} blended-zio - Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Way of Quality GmbH - Built with Docusaurus v2.`,
     },
   },
   presets: [
@@ -90,19 +86,14 @@ module.exports = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
-          editUrl:
-            'https://github.com/blended-zio/blended-zio/edit/master/website/',
         },
         blog: {
           showReadingTime: false,
-          editUrl:
-            'https://github.com/blended-zio/blended-zio/edit/master/website/blog/',
         },
         theme: {
           customCss: [
             require.resolve('./src/css/custom.css'),
-            require.resolve('./node_modules/prism-themes/themes/prism-darcula.css')
+            //require.resolve('./node_modules/prism-themes/themes/prism-cb.css')
           ],
         },
       },

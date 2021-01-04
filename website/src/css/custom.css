@@ -7,13 +7,22 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: rgb(33, 175, 144);
-  --ifm-color-primary-darker: rgb(31, 165, 136);
-  --ifm-color-primary-darkest: rgb(26, 136, 112);
-  --ifm-color-primary-light: rgb(70, 203, 174);
-  --ifm-color-primary-lighter: rgb(102, 212, 189);
-  --ifm-color-primary-lightest: rgb(146, 224, 208);
+  --ifm-color-primary: rgb(0,172,213);
+  --ifm-color-primary-dark: #009bc0;
+  --ifm-color-primary-darker: #0092b5;
+  --ifm-color-primary-darkest: #007895;
+  --ifm-color-primary-light: #00bdea;
+  --ifm-color-primary-lighter: #00c6f5;
+  --ifm-color-primary-lightest: #16d2ff;
+
+  --ifm-color-secondary: #ffe239;
+  --ifm-color-secondary-dark: #ffdd1a;
+  --ifm-color-secondary-darker: #ffdb0a;
+  --ifm-color-secondary-darkest: #daba00;
+  --ifm-color-secondary-light: #ffe758;
+  --ifm-color-secondary-lighter: #ffe968;
+  --ifm-color-secondary-lightest: #fff097;
+
   --ifm-code-font-size: 95%;
 }
 

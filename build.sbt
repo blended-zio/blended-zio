@@ -60,10 +60,10 @@ lazy val blendedJmx =
     )
 
 lazy val docs = project
-  .in(file("blended-zio-docs"))
+  .in(file("website"))
   .settings(
     skip.in(publish) := true,
-    moduleName := "blended-zio.blended-zio-docs",
+    moduleName := "blended.zio.website",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
       zioCore,
@@ -71,6 +71,8 @@ lazy val docs = project
     ),
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(blendedJmx),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
+    mdocIn := (baseDirectory in LocalRootProject).value / "website" / "docs_src",
+    mdocOut := (baseDirectory in LocalRootProject).value / "website" / "docs",
     cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value

@@ -8,44 +8,46 @@ import styles from './styles.module.css';
 
 const features = [
   {
-    title: 'Easy to Use',
-    imageUrl: 'img/undraw_docusaurus_mountain.svg',
+    title: 'Testable',
+    imageUrl: 'img/Testable.jpg',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Leverage our experience designing and building
+        automated tests running locally or in the cloud.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
-    imageUrl: 'img/undraw_docusaurus_tree.svg',
+    title: 'Built on ZIO',
+    imageUrl: 'img/Foundation.jpg',
+    imageAlt: 'Photo by Rodolfo Quirós from Pexels',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        <a href="https://zio.dev">ZIO</a> is a library for asynchronous and concurrent programming
+        that is based on pure functional programming.
       </>
     ),
   },
   {
-    title: 'Powered by React',
-    imageUrl: 'img/undraw_docusaurus_react.svg',
+    title: 'Contribute',
+    imageUrl: 'img/Contribute.jpg',
+    imageAlt: 'Photo by Kevin Ku from Pexels',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Help us by browsing our repository and take a look at the
+        <a href="https://github.com/blended-zio/blended-zio/issues"> open issues</a>.
       </>
     ),
   },
 ];
 
-function Feature({ imageUrl, title, description }) {
+function Feature({ imageUrl, imageAlt, title, description }) {
   const imgUrl = useBaseUrl(imageUrl);
   return (
     <div className={clsx('col col--4', styles.feature)}>
       {imgUrl && (
         <div className="text--center">
-          <img className={styles.featureImage} src={imgUrl} alt={title} />
+          <img className={styles.featureImage} src={imgUrl} alt={imageAlt} />
         </div>
       )}
       <h3>{title}</h3>
@@ -59,8 +61,8 @@ function Home() {
   const { siteConfig = {} } = context;
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
+      title={`${siteConfig.title}`}
+      description="Composable, functional integration flows">
       <header className={clsx('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <h1 className="hero__title">{siteConfig.title}</h1>
