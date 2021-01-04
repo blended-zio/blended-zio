@@ -46,7 +46,7 @@ jobs:
       - uses: olafurpg/setup-gpg@v3
       - run: sbt ci-release
         env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          PGP_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          PGP_SECRET: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          SONATYPE_PASSWORD: ${{ secrets.OSSRH_SBT_CREDENTIALS }}
+          SONATYPE_USERNAME: "atooni"
