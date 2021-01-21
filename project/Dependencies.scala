@@ -5,6 +5,7 @@ object Dependencies {
   val vAmq        = "5.16.0"
   val vLogback    = "1.2.3"
   val vZio        = "1.0.4"
+  val vZioConfig  = "1.0.0-RC29"
   val vZioLogging = "0.5.4"
   val vZioNio     = "1.0.0-RC9"
 
@@ -16,6 +17,7 @@ object Dependencies {
   val jms_1_1 = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1"
 
   val zioCore     = "dev.zio" %% "zio"               % vZio
+  val zioConfig   = "dev.zio" %% "zio-config"        % vZioConfig
   val zioLog      = "dev.zio" %% "zio-logging"       % vZioLogging
   val zioLogSlf4j = "dev.zio" %% "zio-logging-slf4j" % vZioLogging
   val zioNio      = "dev.zio" %% "zio-nio"           % vZioNio

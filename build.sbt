@@ -42,9 +42,25 @@ lazy val root =
     .enablePlugins(BuildInfoPlugin)
     .aggregate(
       blendedActiveMq,
+      blendedCore,
       blendedJmx,
       blendedStreams,
       docs
+    )
+
+lazy val blendedActiveMq =
+  (project in file("blended.zio.activemq"))
+    .settings(stdSettings("blended.zio.activemq"))
+    .settings(
+      libraryDependencies ++= (amqDefault ++ zioDefault ++ testDefault)
+    )
+
+lazy val blendedCore =
+  (project in file("blended.zio.core"))
+    .settings(stdSettings("blended.zio.core"))
+    .settings(
+      libraryDependencies ++= (zioDefault ++ testDefault),
+      libraryDependencies += zioConfig
     )
 
 lazy val blendedJmx =
@@ -54,13 +70,6 @@ lazy val blendedJmx =
     )
     .settings(
       libraryDependencies ++= (zioDefault ++ testDefault)
-    )
-
-lazy val blendedActiveMq =
-  (project in file("blended.zio.activemq"))
-    .settings(stdSettings("blended.zio.activemq"))
-    .settings(
-      libraryDependencies ++= (amqDefault ++ zioDefault ++ testDefault)
     )
 
 lazy val blendedStreams =
@@ -83,7 +92,7 @@ lazy val docs = project
     ),
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(blendedJmx),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
-    mdocIn := (baseDirectory in LocalRootProject).value / "website" / "docs_src",
+    mdocIn := (baseDirectory in LocalRootProject).value / "docs",
     mdocOut := (baseDirectory in LocalRootProject).value / "website" / "docs",
     cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
