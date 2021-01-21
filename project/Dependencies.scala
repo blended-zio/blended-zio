@@ -14,7 +14,7 @@ object Dependencies {
   val amqBroker = "org.apache.activemq" % "activemq-broker"       % vAmq
   val amqKahaDb = "org.apache.activemq" % "activemq-kahadb-store" % vAmq
 
-  val jms_1_1 = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1"
+  val jms_1_1 = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1.1"
 
   val zioCore     = "dev.zio" %% "zio"               % vZio
   val zioConfig   = "dev.zio" %% "zio-config"        % vZioConfig
