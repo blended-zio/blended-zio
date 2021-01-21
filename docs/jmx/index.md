@@ -1,7 +1,7 @@
 ---
-giturl: "https://github.com/blended-zio/blended-zio-jmx"
+id: index
+title: "Blended ZIO JMX"
 ---
-# blended-zio-jmx
 
 All _blended_ applications require some basic JMX functionality:
 

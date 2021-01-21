@@ -1,6 +1,6 @@
 module.exports = {
   someSidebar: {
-    Blended: ['doc1', 'doc2', 'doc3'],
-    Features: ['mdx'],
+    Overview: ['container', 'usecases'],
+    Modules: ['core/index', 'jmx/index', 'streams/index'],
   },
 };

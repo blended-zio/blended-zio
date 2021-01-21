@@ -11,10 +11,9 @@ module.exports = {
   themeConfig: {
     prism: {
       theme: require('prism-react-renderer/themes/nightOwl'),
-      additionalLanguages: ['scala'],
+      additionalLanguages: ['scala', 'json'],
     },
     navbar: {
-      //title: 'Blended ZIO',
       logo: {
         alt: 'Blended ZIO',
         src: 'img/Logos/svg/black_no_background.svg',

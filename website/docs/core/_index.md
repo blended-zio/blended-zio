@@ -53,7 +53,7 @@ With the code above, zio-config will generate the following report in markdown f
 
 |FieldName|Format                     |Description|Sources|
 |---      |---                        |---        |---    |
-|         |[all-of](fielddescriptions)|           |       |
+|         |all-offielddescriptions|           |       |
 
 ### Field Descriptions
 

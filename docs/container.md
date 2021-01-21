@@ -1,8 +1,7 @@
 ---
-title: "Blended Container Architecture"
+id: container
+title: "Service based containers"
 ---
-
-# Service based containers
 
 A JVM executing a blended application will be referenced to as a _blended container_. When _blended_ was started in it's first version, it has been a Java application running inside a J2EE server, which everyone referred to as a container. Over time _blended_ has evolved to a stand-alone Scala application on top of OSGi, but the term _container_ has stuck.
 
@@ -10,11 +9,11 @@ A typical _blended environment_ consists of several _blended containers_ distrib
 
 To achieve this, _blended_ makes use of other enterprise applications such as messaging backbones, the PKI infrastructure and others. Every access to an external application is realized within a module and exposed to other modules only in terms of service interfaces, so that a change in the implementation has only minimal impact. In essence, one could say that blended consists of layered services running within the same JVM.
 
-{{< hint info >}}
+:::note
 For example, within _Blended 3_ the JMS connectivity is realized as a service which is offered to other modules with the `ConnectionFactory` interface defined in the [JMS specification](https://download.oracle.com/otndocs/jcp/7195-jms-1.1-fr-spec-oth-JSpec/). Under the covers the implementation uses a keep alive mechanism to ensure that JMS connections are alive and operational.
 
 Another example is a `CertificateManager` managing the key- and trust-store of a _blended container_. Within _Blended 3_, an implementation with self signed certificates and another based on the [`SCEP` protocol](https://en.wikipedia.org/wiki/Simple_Certificate_Enrollment_Protocol) to provision certificates exist. These certificates are used by the `SSLContext` service, which is in turn used by all modules that need to offer a SSL based server socket.
-{{< /hint >}}
+:::
 
 ## Container types
 
@@ -28,7 +27,7 @@ Within _Blended 3_ it has proven to be a best practice that the configuration fi
 
 For example, the configuration for a LDAP service might look like:
 
-```
+```json
 {
   url             : "ldaps://ldap.$[[env]].$[[country]]:4712"
   systemUser"     : "admin"

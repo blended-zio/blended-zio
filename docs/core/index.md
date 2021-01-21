@@ -1,7 +1,6 @@
 ---
-giturl   : "https://github.com/blended-zio/blended-zio-core"
-coresrc  : "modules/blended-zio-core/blended-zio-core/jvm/src/main/scala"
-coretest : "modules/blended-zio-core/blended-zio-core/jvm/src/test/scala"
+id: index
+title: Blended ZIO Core
 ---
 # blended-zio-core
 
@@ -53,7 +52,7 @@ With the code above, zio-config will generate the following report in markdown f
 
 |FieldName|Format                     |Description|Sources|
 |---      |---                        |---        |---    |
-|         |[all-of](fielddescriptions)|           |       |
+|         |all-offielddescriptions|           |       |
 
 ### Field Descriptions
 

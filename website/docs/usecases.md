@@ -1,12 +1,12 @@
 ---
-title: "Blended Use Cases"
+id: usecases
+title: Blended Use Cases
 ---
 # An overview of requirements for Blended
 
-{{< hint info >}}
+:::note
 For the sake of this article a _Blended_ based application instance running on top of a JVM shall be referenced to as a _blended container_ or simply _container_.
-{{< /hint >}}
-
+:::
 
 ## High Level
 
