@@ -40,7 +40,12 @@ lazy val root =
     )
     .settings(buildInfoSettings("blended.zio"))
     .enablePlugins(BuildInfoPlugin)
-    .aggregate(blendedJmx, docs)
+    .aggregate(
+      blendedActiveMq,
+      blendedJmx,
+      blendedStreams,
+      docs
+    )
 
 lazy val blendedJmx =
   (project in file("blended.zio.jmx"))
@@ -48,15 +53,22 @@ lazy val blendedJmx =
       stdSettings("blended.zio.jmx")
     )
     .settings(
-      libraryDependencies ++= Seq(
-        zioCore,
-        zioLog,
-        logbackClassic % Test,
-        logbackCore    % Test,
-        zioLogSlf4j    % Test,
-        zioTest        % Test,
-        zioTestSbt     % Test
-      )
+      libraryDependencies ++= (zioDefault ++ testDefault)
+    )
+
+lazy val blendedActiveMq =
+  (project in file("blended.zio.activemq"))
+    .settings(stdSettings("blended.zio.activemq"))
+    .settings(
+      libraryDependencies ++= (amqDefault ++ zioDefault ++ testDefault)
+    )
+
+lazy val blendedStreams =
+  (project in file("blended.zio.streams"))
+    .settings(stdSettings("blended.zio.streams"))
+    .settings(
+      libraryDependencies ++= (zioDefault ++ testDefault),
+      libraryDependencies += jms_1_1
     )
 
 lazy val docs = project
