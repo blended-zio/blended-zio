@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
 
-  val vZio        = "1.0.3"
+  val vZio        = "1.0.4"
   val vZioLogging = "0.5.4"
   val vZioNio     = "1.0.0-RC9"
 
