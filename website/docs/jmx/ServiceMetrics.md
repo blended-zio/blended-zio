@@ -1,7 +1,5 @@
 ---
-giturl:  "https://github.com/blended-zio/blended-zio-jmx"
-jmxsrc:  "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/main/scala"
-jmxtest: "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/test/scala"
+id: servicemetrics
 ---
 
 # ZIO based Service Metrics implementation

@@ -1,9 +1,7 @@
 ---
-giturl:  "https://github.com/blended-zio/blended-zio-jmx"
-jmxsrc:  "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/main/scala"
-jmxtest: "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/test/scala"
+id: mbeanpublisher
+title: MBean Publisher
 ---
-# MBean Publisher
 
 The MBean publisher is used to publish arbitrary case classes as `DynamicMBean`s via JMX. A generic mapper will examine the structure of the given case class instance and recursively map all attributes to corresponding attributes within th MBean.
 
@@ -24,11 +22,11 @@ Then the MBeanPublisher can be used by simply passing a case class to `updateMBe
 
 In the test case we are also using the `MBeanServerFacade` to verify that the `MBean` has been published correctly and has the correct values.
 
-{{< hint info >}}
+:::note
 The implementation keeps track of all instances that have been published. Only the first call to publish will actually register the MBean while
 subsequent calls will only update the underlying value. The Service makes sure that updates to MBeans are only allowed for MBeans that are based
 on the same Class.
-{{< /hint >}}
+:::
 
 ## Implementation details
 

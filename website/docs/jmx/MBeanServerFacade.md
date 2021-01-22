@@ -1,7 +1,5 @@
 ---
-giturl:  "https://github.com/blended-zio/blended-zio-jmx"
-jmxsrc:  "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/main/scala"
-jmxtest: "modules/blended-zio-jmx/blended-zio-jmx/jvm/src/test/scala"
+id: mbeanserver
 ---
 # A simple facade to the Platform MBean Server
 
@@ -14,7 +12,7 @@ This leads to the following, simple interface definition:
 
 {{< codesection dirref="jmxsrc" file="blended/zio/jmx/MBeanServerFacade.scala" section="service" >}}
 
-{{< hint info >}}
+:::note
 Even though the interface is defined without any environment restrictions, the actual `live` service requires that
 a `Logging` service is available. We have decided to push the requirement for a `Logging` service into the instantiation
 of the `live` service as we might come up with `test` instances at some point that should just mock up the interface and
@@ -23,7 +21,7 @@ does not require any logging at all.
 We will use the [zio-logging](https://zio.github.io/zio-logging/) API to perform the actual logging. See
 [this post]({{< ref "/posts/2020-09-28-ZIOLogging.md" >}}) for more details on injecting different logging back-ends into the
 `live` service instance.
-{{< /hint >}}
+:::
 
 ## Querying for MBean Names
 

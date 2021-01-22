@@ -1,7 +1,6 @@
 ---
 id: container
 title: "Service based containers"
-slug: "/"
 ---
 
 A JVM executing a blended application will be referenced to as a _blended container_. When _blended_ was started in it's first version, it has been a Java application running inside a J2EE server, which everyone referred to as a container. Over time _blended_ has evolved to a stand-alone Scala application on top of OSGi, but the term _container_ has stuck.

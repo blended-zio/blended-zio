@@ -3,6 +3,25 @@ id: index
 title: "Blended ZIO JMX"
 ---
 
+import Button from '@material-ui/core/Button';
+
+import { createMuiTheme } from '@material-ui/core/styles';
+import { ThemeProvider } from '@material-ui/styles';
+import { purple } from '@material-ui/core/colors';
+
+export const theme = createMuiTheme({
+  palette: {
+    primary: {
+      // Purple and green play nicely together.
+      main: '#00acd5',
+    },
+    secondary: {
+      // This is green.A700 as hex.
+      main: '#ffe239',
+    },
+  },
+});
+
 All _blended_ applications require some basic JMX functionality:
 
 ## MBean Server facade
@@ -11,9 +30,10 @@ The MBean Server facade provides read only access to the `MBeanServer` of the un
 
 The corresponding [implementation](https://github.com/woq-blended/blended/blob/main/blended.jmx/jvm/src/main/scala/blended/jmx/internal/BlendedMBeanServerFacadeImpl.scala) is implemented on top of some case classes to represent the JMX objects. The various methods in general return instances of `Try` after executing the calls to the `MBeanServer`.
 
-{{< button relref="mbeanserverfacade" >}}
-MBean Server implementation details
-{{< /button >}}
+<ThemeProvider theme={theme}>
+  <Button variant="contained" color="primary">Primary</Button>
+  <Button variant="contained" color="secondary">Secondary</Button>
+</ThemeProvider>
 
 ## Publish arbitrary case classes as JMX objects
 
@@ -44,9 +64,9 @@ Furthermore, any service invocation can be mapped to a group identifier, so that
 
 Within _Blended 3_ this is implemented by publishing corresponding events on the Akka Event Stream and a service implemented within an actor listening for these events. Also, this actor uses the JMX publishing mechanism to publish the group summaries as MBeans.
 
-{{< hint info >}}
+:::note
 The ZIO implementation should migrate the actor based solution to a ZIO module and provide the service via a ZLayer to other modules within _Blended ZIO_. Also, the publishing of the group summaries to should be decoupled from the collector Service and implemented as an a service, which requires the collector within it's environment.
-{{< /hint >}}
+:::
 
 {{< button relref="servicemetrics" >}}
 Read more on the implementation details
