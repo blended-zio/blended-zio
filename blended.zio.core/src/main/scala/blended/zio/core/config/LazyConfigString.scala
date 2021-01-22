@@ -10,8 +10,6 @@ sealed abstract case class LazyConfigString(value: String)
 
 object LazyConfigString {
 
-  import ConfigDescriptorAdt._
-
   final case class Raw(raw: String) {
     def evaluate(
       ctxt: Map[String, String]
@@ -22,12 +20,8 @@ object LazyConfigString {
   }
 
   val configString: ConfigDescriptor[Raw]               =
-    Source(ConfigSource.empty, LazyConfigStringType) ?? "lazyly evaluated config string"
+    string(Raw.apply, Raw.unapply)
   def configString(path: String): ConfigDescriptor[Raw] = nested(path)(configString)
 
-  private case object LazyConfigStringType extends PropertyType[String, LazyConfigString.Raw] {
-    def read(v: String): Either[PropertyType.PropertyReadError[String], LazyConfigString.Raw] = Right(Raw(v))
-    def write(a: LazyConfigString.Raw): String                                                = a.raw
-  }
 }
 // end:doctag<descriptor>

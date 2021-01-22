@@ -62,7 +62,7 @@ object ConfigReaderTest extends DefaultRunnableSpec {
   private def docConfig(src: ConfigSource) = testM("Generate documentation for the config descriptor")(
     (for {
       cfg <- ZIO.fromEither(read(desc.from(src)))
-      doc  = generateDocs(desc).toTable.asGithubFlavouredMarkdown
+      doc  = generateDocs(desc).toTable
       rep  = generateReport(desc, cfg)
       _   <- log.info(s"\n$doc")
       _   <- log.info(rep.toString())
