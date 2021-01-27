@@ -1,18 +1,15 @@
 ---
-title: Auto-Recovery for (JMS) Streams
-date: "2020-10-30"
-tags:
-  - ZIO
-  - Streams
-  - JMS
-categories:
-  - ZIO
-Summary: How can JMS streams recover after an exception in the underlying JMS layer
-
-amqsrc:       "modules/blended-zio-activemq/blended-zio-activemq/src/main/scala"
-streamssrc:   "modules/blended-zio-streams/blended-zio-streams/jvm/src/main/scala"
-streamstest:  "modules/blended-zio-streams/blended-zio-streams/jvm/src/test/scala"
+slug: zio-streams-autorecover
+title: Autorecovery for (JMS) Streams
+tags: [ZIO, Streams, JMS]
+author: Andreas Gies
+author_url: https://github.com/atooni
 ---
+
+Today we are going to explore the ZIO streams API and see how we can create a stream that will will enter a recovery phase in certain error scenarios. We will explore how we can deal with exceptions on the connection level while keeping the stream processing code untouched.
+
+<!-- truncate -->
+
 # Automatically recover (JMS) streams
 
 In my last [article]({{< relref "/posts/2020-10-27-ZIOJms.md" >}}) I have shown how the ZIO stream API allows us to easily create streams for sending or receiving messages via JMS. Within the sample program we have seen that the streams terminate with an exception whenever the underlying JMS API raises encounters an error.

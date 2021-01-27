@@ -1,6 +1,6 @@
 module.exports = {
   someSidebar: {
-    Overview: ['container', 'usecases'],
+    Overview: ['usecases', 'container'],
     Modules: ['core/index', 'jmx/index', 'streams/index'],
   },
 };

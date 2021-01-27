@@ -2,8 +2,6 @@
 id: index
 title: Blended ZIO Core
 ---
-# blended-zio-core
-
 Functionality that is required by all _blended_ containers.
 
 ## Configuring Blended Containers
@@ -29,7 +27,7 @@ The ZIO ecosystem has a library called [zio-config](https://zio.github.io/zio-co
 
 Following the [advice](https://discord.com/channels/629491597070827530/633028431000502273/767663251092930591) from the zio-config library author on discord, we introduce a `LazyConfigString` as follows:
 
-{{< codesection dirref="coresrc" file="blended/zio/core/config/LazyConfigString.scala" section="descriptor" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/config/LazyConfigString.scala" doctag="descriptor" title="Descriptor"
 
 Essentially we define a class `LazyConfigString`, which instances will eventually hold the resolved config value. Making the class `sealed` and `abstract` ensures that new instances can only bo created from within the companion object.
 
@@ -39,20 +37,15 @@ At last we need to provide a config descriptor for `LazyConfigStrings`, so that 
 
 Using the `LazyConfigString`, we can define the `LDAPConfig` as follows:
 
-{{< codesection dirref="coretest" file="blended/zio/core/config/ConfigReaderTest.scala" section="config" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/test/scala/blended/zio/core/config/ConfigReaderTest.scala" doctag="config" title="Sample Config Descriptor"
 
 To access a config value, a layer with a `StringEvaluator` must be referenced:
 
-{{< codesection dirref="coretest" file="blended/zio/core/config/ConfigReaderTest.scala" section="access" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/test/scala/blended/zio/core/config/ConfigReaderTest.scala" doctag="access" title="Access Config"
 
 With the code above, zio-config will generate the following report in markdown format:
 
-{{< hint info >}}
-## Configuration Details
-
-|FieldName|Format                     |Description|Sources|
-|---      |---                        |---        |---    |
-|         |all-offielddescriptions|           |       |
+:::note
 
 ### Field Descriptions
 
@@ -66,13 +59,13 @@ With the code above, zio-config will generate the following report in markdown f
 |groupBase     |primitive|lazyly evaluated config string                                       |       |
 |groupAttribute|primitive|lazyly evaluated config string                                       |       |
 |groupSearch   |primitive|lazyly evaluated config string                                       |       |
-{{< /hint >}}
+:::
 
 ## Evaluate simple string expressions
 
-Lazyly evaluated string expressions are simple expressions as defined here:
+Lazy evaluated string expressions are simple expressions as defined here:
 
-{{< codesection dirref="coresrc" file="blended/zio/core/evaluator/StringExpression.scala" section="expression" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/evaluator/StringExpression.scala" doctag="expression" 
 
 The notable piece here is the `ModifierExpression`, which has the form
 ```
@@ -92,40 +85,40 @@ $[(left:2)[foo]] => "ba"
 
 Modifiers are specified as:
 
-{{< codesection dirref="coresrc" file="blended/zio/core/evaluator/Modifier.scala" section="modifier" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/evaluator/Modifier.scala" doctag="modifier" title="Modifier"
 
-{{< hint info >}}
+:::note
 A modifier implementation can override `lookup` to avoid that the value resolved from the inner expression will be used to look up the final value from the context map.
 
 The `EncryptModifier` does that, so that the decryption will be applied to the string resolved from the inner expression.
-{{< /hint >}}
+:::
 
 ## Simple crypto service
 
 The `EncryptModifier` is defined as
 
-{{< codesection dirref="coresrc" file="blended/zio/core/evaluator/Modifier.scala" section="decrypt" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/evaluator/Modifier.scala" doctag="decrypt" title="Decryption Modifier"
 
 It relies on a crypto service available within the ZIO environment and simply delegates the resolution to the `decrypt` method of that service.
 
 The crypto service is defined as
 
-{{< codesection dirref="coresrc" file="blended/zio/core/crypto/CryptoSupport.scala" section="service" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/crypto/CryptoSupport.scala" doctag="service" title="Simple Crypto Service"
 
 The default implementation can be instantiated with a password, for convenience the code also contains a default password. The password can also be provided via a file. Essentially, the provided password is used to generate a key that is then used to create an instance of a CryptoService which simply wraps some Crypto methods from Java:
 
-{{< codesection dirref="coresrc" file="blended/zio/core/crypto/CryptoSupport.scala" section="crypto" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/crypto/CryptoSupport.scala" doctag="crypto" title="Simple Crypto Service Implementation"
 
 ## Using the services
 
 To use the services resolving config string, a layer with all required services must be provided:
 
-{{< codesection dirref="coretest" file="blended/zio/core/config/ConfigReaderTest.scala" section="layer" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/test/scala/blended/zio/core/config/ConfigReaderTest.scala" doctag="layer" title="Layer Provisioning"
 
 This layer can be provided to an effect by the means of `provideLayer`
 
-{{< codesection dirref="coretest" file="blended/zio/core/config/ConfigReaderTest.scala" section="access" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/test/scala/blended/zio/core/config/ConfigReaderTest.scala" doctag="access" title="Layer Access"
 
 Finally, the config can be resolved from a config source created from a `Map` with `ConfigSource.fromMap`:
 
-{{< codesection dirref="coretest" file="blended/zio/core/config/ConfigReaderTest.scala" section="config" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.core/src/test/scala/blended/zio/core/config/ConfigReaderTest.scala" doctag="config" title="Sample config class"

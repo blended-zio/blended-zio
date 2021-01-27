@@ -1,18 +1,14 @@
 ---
-title: "Keep alive for JMS connections"
-date: "2020-11-05"
-tags:
-  - ZIO
-  - Streams
-  - JMS
-categories:
-  - ZIO
-Summary: "Add a simple keep alive mechanism to (JMS) connections"
-
-amqsrc:       "modules/blended-zio-activemq/blended-zio-activemq/src/main/scala"
-streamssrc:   "modules/blended-zio-streams/blended-zio-streams/jvm/src/main/scala"
-streamstest:  "modules/blended-zio-streams/blended-zio-streams/jvm/src/test/scala"
+slug: zio-jms-keepalive
+title: Keep alive for JMS connections
+tags: [ZIO, Streams, JMS]
+author: Andreas Gies
+author_url: https://github.com/atooni
 ---
+
+This article concludes the mini series exploring the ZIO Stream API and shows how a simple keepalive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required. 
+
+<!-- truncate -->
 
 # Why do we need a keep alive
 

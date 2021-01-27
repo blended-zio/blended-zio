@@ -51,9 +51,9 @@ These services can than be used by __all__ modules that need to be configured.
 
 A container should be deployable to a target machine simply by extracting an archive to a directory - the `BLENDED_HOME`. Within `BLENDED_HOME` all libraries are deployed within the `lib` sub directory, all configuration files shall be within the `etc` sub directory. If modules require storage on the file system, this storage should be beneath `BLENDED_HOME` as well.
 
-{{< hint info >}}
+:::note
 For example, some containers contain an embedded [ActiveMQ](https://activemq.apache.org) broker, which requires a data directory.
-{{< /hint >}}
+:::
 
 ## Deployment automation
 

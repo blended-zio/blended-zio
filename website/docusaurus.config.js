@@ -10,7 +10,7 @@ module.exports = {
   projectName: 'blended-zio', // Usually your repo name.
   themeConfig: {
     prism: {
-      theme: require('prism-react-renderer/themes/nightOwl'),
+      theme: require('prism-react-renderer/themes/nightOwlLight'),
       additionalLanguages: ['scala', 'json'],
     },
     navbar: {
@@ -40,12 +40,8 @@ module.exports = {
           title: 'Docs',
           items: [
             {
-              label: 'Style Guide',
+              label: 'Get Started',
               to: 'docs/',
-            },
-            {
-              label: 'Second Doc',
-              to: 'docs/doc2/',
             },
           ],
         },
@@ -85,9 +81,15 @@ module.exports = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
+          remarkPlugins: [
+            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+          ],
         },
         blog: {
           showReadingTime: false,
+          remarkPlugins: [
+            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+          ],
         },
         theme: {
           customCss: [

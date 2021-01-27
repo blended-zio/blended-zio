@@ -1,6 +1,7 @@
 ---
 id: usecases
 title: Blended Use Cases
+slug: /
 ---
 # An overview of requirements for Blended
 
@@ -8,7 +9,7 @@ title: Blended Use Cases
 For the sake of this article a _Blended_ based application instance running on top of a JVM shall be referenced to as a _blended container_ or simply _container_.
 :::
 
-## High Level
+## High Level  
 
 ### General architecture
 
@@ -24,27 +25,28 @@ These secondary containers __never__ communicate with the data-center directly, 
 
 For resilience, the _shop containers_ should be run in a cluster.
 
+![Container](/img/architecture.svg)
+
+```
 {{< kroki imgType="mermaid" >}}
-flowchart LR
+graph TD
   subgraph Shop X
-    Bx((Shop X)) --> FX1((Fs X1)) --> Bx
+    Bx(Shop X) --> FX1((Fs X1)) --> Bx
     Bx --> FX2((Fs X2)) --> Bx
   end
-
   subgraph Shop Y
-    By((Shop y)) --> FY1((Fs Y1)) --> By
+    By(Shop Y) --> FY1((Fs Y1)) --> By
     By --> FY2((Fs Y2)) --> By
   end
-
   subgraph Shop Z
-    Bz((Shop z)) --> FZ1((Fs Z1)) --> Bz
+    Bz(Shop Z) --> FZ1((Fs Z1)) --> Bz
     Bz --> FZ2((Fs Z2)) --> Bz
   end
-
-  A((Data-center)) --> Bx --> A
+  A(Data Center) --> Bx --> A
   A --> By --> A
   A --> Bz --> A
 {{< /kroki >}}
+```
 
 ## Application requirements
 
@@ -66,11 +68,11 @@ All messages are routed via the _shop container_ using the same services. Since 
 
 Within the message we require an identifier to denote the business case the message belongs to. This business case identifier determines the routing rules that shall be applied to the message moving through the _container_.
 
-{{< hint info >}}
+:::note
 A business case __price__ may indicate that the message shall be routed to the _shop.price_ messaging channel, where a cash desk application may be listening as a consumer.
 
 A business case __payment__ may indicate that the message shall be routed to the _central.payments_ messaging channel, where a central application may be listening as a consumer.
-{{< /hint >}}
+:::
 
 Keeping these examples in mind we can see that the _shop container_ must be able to route message independently from the source or destination messaging provider. Also, since the _shop container_ should be able to operate regardless whether it is currently connected to the central application, the overall communication is split into an _inbound bridge_, an _outbound bridge_ and a _dispatcher_.
 
@@ -83,9 +85,9 @@ The _dispatcher_ consumes messages from a local dispatcher messaging channel, en
 * dispatches the message to a shop local channel to be consumed by a shop local application
 * dispatches the message to a shop local channel to be routed further to a central channel
 
-{{< hint info >}}
+:::note
 The important architectural decision is, that __only__ the _shop container_ is connected to the central messaging backbone while the _secondary containers_ use the inbound / outbound bridge to communicate with the central applications.
-{{< /hint >}}
+:::
 
 Besides this general message flow architecture, the _usual_ requirements apply:
 
