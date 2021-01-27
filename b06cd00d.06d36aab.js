@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[19],{87:function(e){e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Using ZIO Logging","permalink":"/blended-zio/blog/zio-logging"},{"title":"Welcome","permalink":"/blended-zio/blog/welcome"}]}')}}]);

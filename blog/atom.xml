@@ -2,23 +2,37 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://blended-zio.github.io/blended-zio/blog</id>
     <title>Blended ZIO Blog</title>
-    <updated>2020-09-28T00:00:00.000Z</updated>
+    <updated>2020-11-05T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://blended-zio.github.io/blended-zio/blog"/>
     <subtitle>Blended ZIO Blog</subtitle>
     <icon>https://blended-zio.github.io/blended-zio/img/favicon.ico</icon>
     <entry>
-        <title type="html"><![CDATA[Using ZIO Logging]]></title>
+        <title type="html"><![CDATA[Keep alive for JMS connections]]></title>
+        <id>zio-jms-keepalive</id>
+        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-jms-keepalive"/>
+        <updated>2020-11-05T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This article concludes the mini series exploring the ZIO Stream API and shows how a simple keepalive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required.]]></summary>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Autorecovery for (JMS) Streams]]></title>
+        <id>zio-streams-autorecover</id>
+        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-streams-autorecover"/>
+        <updated>2020-10-30T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Today we are going to explore the ZIO streams API and see how we can create a stream that will will enter a recovery phase in certain error scenarios. We will explore how we can deal with exceptions on the connection level while keeping the stream processing code untouched.]]></summary>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[ZIO Streams and JMS]]></title>
+        <id>zio-streams-jms</id>
+        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-streams-jms"/>
+        <updated>2020-10-27T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this article we are going to explore a bit of the ZIO streams API and how it can be used to talk to a JMS broker. The ZIO web site and awesome-zio have a lot of very good articles and talks on ZIO streams covering the basics, so I won't repeat those here.]]></summary>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Use ZIO Logging]]></title>
         <id>zio-logging</id>
         <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-logging"/>
         <updated>2020-09-28T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[The complete source code used in this article can be found on github]]></summary>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Welcome]]></title>
-        <id>welcome</id>
-        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/welcome"/>
-        <updated>2019-05-30T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[Blog features are powered by the blog plugin. Simply add files to the blog directory. It supports tags as well!]]></summary>
+        <summary type="html"><![CDATA[In this article we will investigate how we can leverage zio-logging in our service implementations while avoiding to add a logging service requirement to the business interfaces.]]></summary>
     </entry>
 </feed>
