@@ -79,6 +79,7 @@ lazy val blendedStreams =
       libraryDependencies ++= (zioDefault ++ testDefault),
       libraryDependencies += jms_1_1
     )
+    .dependsOn(blendedActiveMq)
 
 lazy val docs = project
   .in(file("website"))

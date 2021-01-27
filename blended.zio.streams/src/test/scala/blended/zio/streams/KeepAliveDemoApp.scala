@@ -17,7 +17,7 @@ import blended.zio.streams.jms._
 import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
 
-object KeepAliveDemoApp {
+object KeepAliveDemoApp extends App {
 
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
@@ -27,10 +27,8 @@ object KeepAliveDemoApp {
   private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
     logEnv >>> AMQBroker.simple("simple")
 
-  private val zmxLayer = zio.zmx.Diagnostics.live("localhost", 6666)
-
-  private val combinedEnv: ZLayer[ZEnv, Throwable, ZEnv with AMQBroker.AMQBroker with Logging] =
-    logEnv ++ brokerEnv
+  private val combinedEnv: ZLayer[ZEnv, Nothing, ZEnv with AMQBroker.AMQBroker with Logging] =
+    (logEnv ++ brokerEnv).orDie
 
   // doctag<stream>
   private val stream: ZStream[ZEnv, Nothing, String] = ZStream
@@ -85,7 +83,7 @@ object KeepAliveDemoApp {
   private val testDest: JmsDestination = JmsQueue("sample")
 
   // doctag<program>
-  private val program: ZIO[ZEnv with AMQBroker.AMQBroker with Logging, Throwable, Unit] = {
+  private val program: ZIO[ZEnv with AMQBroker.AMQBroker with Logging, Throwable, ExitCode] = {
 
     def logic(si: SingletonService[ZIOJmsConnectionManager.Service]) = for {
       _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
@@ -101,19 +99,15 @@ object KeepAliveDemoApp {
       si <- ZIOJmsConnectionManager.Service.singleton
       _  <-
         logic(si).provideSomeLayer[ZEnv with AMQBroker.AMQBroker with Logging](ZIOJmsConnectionManager.Service.live(si))
-    } yield ()
+    } yield ExitCode.success
   }
   // end:doctag<program>
 
-  def main(args : Array[String]) : Unit = {
-
-    val runtime = Runtime.default.mapPlatform(_.withSupervisor(zmx.ZMXSupervisor))
-
-    runtime.unsafeRun(
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
+    (
       program
-        .provideCustomLayer(combinedEnv)
-        .provideCustomLayer(zmxLayer)
-        .catchAllCause(c => putStrLn(c.prettyPrint))
-    )
-  }
+        .catchAll(_ => ZIO.succeed(ExitCode.failure))
+      )
+      .provideCustomLayer(combinedEnv)
+
 }
