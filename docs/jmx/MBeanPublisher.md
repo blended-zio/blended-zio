@@ -7,18 +7,17 @@ The MBean publisher is used to publish arbitrary case classes as `DynamicMBean`s
 
 As such the interface definition for the publishing service is:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/publish/ProductMBeanPublisher.scala" section="service" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/publish/ProductMBeanPublisher.scala" doctag="service"
 
 ## Using the MBean publisher
 
 The easiest way to use the MBeanPublisher is to make it available through a layer like it is done within the tests:
 
-{{< codesection dirref="jmxtest" file="blended/zio/jmx/publish/MBeanPublisherTest.scala" section="layer" >}}
-
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/test/scala/blended/zio/jmx/MBeanServerTest.scala" doctag="zlayer"
 
 Then the MBeanPublisher can be used by simply passing a case class to `updateMBean`. For now the case class also needs to implement `Nameable` so that the proper `ObjectName` can be calculated.
 
-{{< codesection dirref="jmxtest" file="blended/zio/jmx/publish/MBeanPublisherTest.scala" section="simple" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/test/scala/blended/zio/jmx/publish/MBeanPublisherTest.scala" doctag="simple"
 
 In the test case we are also using the `MBeanServerFacade` to verify that the `MBean` has been published correctly and has the correct values.
 
@@ -34,9 +33,9 @@ The service implementation keeps track of the published values in a `TMap` with 
 
 To manipulate the `TMap` we use some helper methods to either create or update an entry within the `TMap`:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/publish/ProductMBeanPublisher.scala" section="helpers" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/publish/ProductMBeanPublisher.scala" doctag="helpers"
 
-{{< hint warning >}}
+:::caution
 The implementation uses [STM](https://zio.dev/docs/datatypes/datatypes_stm) under the covers. It is important to note that STM code should not include side effecting code that might not be idempotent (such as appending to a file or as in our case register an MBean). The reason for that
 is that the STM code will be retried if any of the STM-values that are being touched by the operation is changed from another fiber.
 
@@ -47,8 +46,8 @@ For now we are simply ignoring that specific JMX exception, but a better solutio
 scenario.
 
 (Also see the [discussion on Discord](https://discordapp.com/channels/629491597070827530/630498701860929559/761219670622601277))
-{{< /hint >}}
+:::
 
 With the helper methods in place, actual service implementation methods is fairly straightforward:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/publish/ProductMBeanPublisher.scala" section="methods" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/publish/ProductMBeanPublisher.scala" doctag="methods"

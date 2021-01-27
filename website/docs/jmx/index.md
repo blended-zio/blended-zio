@@ -1,26 +1,7 @@
 ---
 id: index
-title: "Blended ZIO JMX"
+title: JMX Overview
 ---
-
-import Button from '@material-ui/core/Button';
-
-import { createMuiTheme } from '@material-ui/core/styles';
-import { ThemeProvider } from '@material-ui/styles';
-import { purple } from '@material-ui/core/colors';
-
-export const theme = createMuiTheme({
-  palette: {
-    primary: {
-      // Purple and green play nicely together.
-      main: '#00acd5',
-    },
-    secondary: {
-      // This is green.A700 as hex.
-      main: '#ffe239',
-    },
-  },
-});
 
 All _blended_ applications require some basic JMX functionality:
 
@@ -30,10 +11,8 @@ The MBean Server facade provides read only access to the `MBeanServer` of the un
 
 The corresponding [implementation](https://github.com/woq-blended/blended/blob/main/blended.jmx/jvm/src/main/scala/blended/jmx/internal/BlendedMBeanServerFacadeImpl.scala) is implemented on top of some case classes to represent the JMX objects. The various methods in general return instances of `Try` after executing the calls to the `MBeanServer`.
 
-<ThemeProvider theme={theme}>
-  <Button variant="contained" color="primary">Primary</Button>
-  <Button variant="contained" color="secondary">Secondary</Button>
-</ThemeProvider>
+[MBeanServer Facade implementation details](MBeanServerFacade.md)
+
 
 ## Publish arbitrary case classes as JMX objects
 
@@ -47,9 +26,7 @@ The implementation in _Blended 3_ is completed by a [MBeanManger actor](https://
 
 For the _ZIO_ based implementation the actor has been replaced with a service that can be made via a `ZLayer` which transforms the service interface from messages to properly typed ZIO effects.
 
-{{< button relref="mbeanpublisher" >}}
-MBean publisher implementation details
-{{< /button >}}
+[MBean publisher implementation details](MBeanPublisher.md)
 
 ## Service invocation metrics
 
@@ -68,18 +45,4 @@ Within _Blended 3_ this is implemented by publishing corresponding events on the
 The ZIO implementation should migrate the actor based solution to a ZIO module and provide the service via a ZLayer to other modules within _Blended ZIO_. Also, the publishing of the group summaries to should be decoupled from the collector Service and implemented as an a service, which requires the collector within it's environment.
 :::
 
-{{< button relref="servicemetrics" >}}
-Read more on the implementation details
-{{< /button >}}
-
-## Migration ToDo's
-
-* [x] Service Invocation Metrics
-  * [x] Implement the service access, so that a singleton instance will be used
-  * [x] Review The singleton implementation as it uses an unsaferun method to initialize the TMaps used to hold the internal service state
-  * [ ] Refactor the tests to use ZIO property based testing
-* [x] MBeanServer Facade
-* [x] JMX Publisher for arbitrary case classes
-  * [ ] Revisit the publisher implementation to use locks rather than STM based operations as side effecting code such as registering MBeans might break the STM retries
-
-
+[Service Metrics implementation details](ServiceMetrics.md)

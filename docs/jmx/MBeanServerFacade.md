@@ -1,7 +1,7 @@
 ---
 id: mbeanserver
+title: A simple MBean Server Facade
 ---
-# A simple facade to the Platform MBean Server
 
 This service is a small wrapper around the platform MBean server within a JVM. The use case is to
 have a server side component which can query for the names within the MBeanServer for a given pattern
@@ -10,7 +10,7 @@ to appropriate classes, so that the data can be used later on with a simple read
 
 This leads to the following, simple interface definition:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/MBeanServerFacade.scala" section="service" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="service" title="Service Definition"
 
 :::note
 Even though the interface is defined without any environment restrictions, the actual `live` service requires that
@@ -19,7 +19,7 @@ of the `live` service as we might come up with `test` instances at some point th
 does not require any logging at all.
 
 We will use the [zio-logging](https://zio.github.io/zio-logging/) API to perform the actual logging. See
-[this post]({{< ref "/posts/2020-09-28-ZIOLogging.md" >}}) for more details on injecting different logging back-ends into the
+[this post](/blog/zio-logging) for more details on injecting different logging back-ends into the
 `live` service instance.
 :::
 
@@ -28,7 +28,7 @@ We will use the [zio-logging](https://zio.github.io/zio-logging/) API to perform
 To query for a set of MBean names with an optional is fairly straight forward wrapper around the original JMX API.
 We just have to translate from the case class we want to use in our API to a JMX search pattern and call the API.
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/MBeanServerFacade.scala" section="names" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="names"
 
 In order to make the code a bit more readable, we encapsulate the translation within some helper methods abstracting
 over the case that the pattern may be optional. It might be that a single helper method to translate the pattern
@@ -37,7 +37,7 @@ would have been sufficient, but in this case it seemed to improve the code's rea
 The `queryNames` method performs the actual JMX call and translates the resulting Java object into a `List` of
 `JmxObjectName`
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/MBeanServerFacade.scala" section="helper" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="helper"
 
 ## Retrieving MBean information
 
@@ -52,11 +52,11 @@ MBean Info objects.
 The mapping between attributes and their case class representation happens within the `JmxAttributeCompanion` object. For the
 simple types this is straight forward:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/JmxAttributeCompanion.scala" section="simple" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/JmxAttributeCompanion.scala" doctag="simple"
 
 To map the complex data we will rely on the ZIO `collectPar` operator:
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/JmxAttributeCompanion.scala" section="tabdata" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/JmxAttributeCompanion.scala" doctag="tabdata"
 
 Note, that within `JmxAttributeCompanion` the overall signature is
 
@@ -65,7 +65,7 @@ def make(v: Any): ZIO[Any, IllegalArgumentException, AttributeValue[_]]
 ```
 This means that the error handling is in the responsibility of the user of the `make` effect.
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/MBeanServerFacade.scala" section="attribute" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="attribute"
 
 Here, the `orElse` operator will handle the error by just ignoring the attribute that was faulty.
 
@@ -74,4 +74,4 @@ Here, the `orElse` operator will handle the error by just ignoring the attribute
 The entire MBean Info object contains the `JmxObjectName` it belongs to and a Map of attribute names to their corresponding values.
 In other words, the attributes of a MBean Info can be represented by an instance of `CompositeAttributeValue`.
 
-{{< codesection dirref="jmxsrc" file="blended/zio/jmx/JmxAttribute.scala" section="beaninfo" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/JmxAttribute.scala" doctag="beaninfo"

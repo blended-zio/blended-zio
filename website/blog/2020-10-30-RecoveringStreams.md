@@ -12,21 +12,21 @@ Today we are going to explore the ZIO streams API and see how we can create a st
 
 # Automatically recover (JMS) streams
 
-In my last [article]({{< relref "/posts/2020-10-27-ZIOJms.md" >}}) I have shown how the ZIO stream API allows us to easily create streams for sending or receiving messages via JMS. Within the sample program we have seen that the streams terminate with an exception whenever the underlying JMS API raises encounters an error.
+In my last [article](2020-10-27-ZIOJms.md) I have shown how the ZIO stream API allows us to easily create streams for sending or receiving messages via JMS. Within the sample program we have seen that the streams terminate with an exception whenever the underlying JMS API raises encounters an error.
 
 One of the most common errors is that the connection is lost due to a network error. For long running applications we would like to initiate an automatic reconnect and either create a new stream or recover the existing stream. The advantage of recovering the existing stream is that we do not have to rewire the users of the streams. Any effect using the existing stream will be suspended until the reconnect has happened and then continue.
 
 In this article I will explore how we ca use the ZIO API to achieve such a transparent reconnect.
 
-{{< hint info >}}
-The complete source code used in this article can be found on [github](https://github.com/blended-zio/blended-zio-streams)
-{{< /hint >}}
+:::info
+The complete source code used in this article can be found on [github](https://github.com/blended-zio/blended-zio/tree/main/blended.zio.streams)
+:::
 
 ## What we want to achieve
 
 Like in the last article, let's start by looking at a sample program we would like to run:
 
-{{< codesection dirref="streamstest" file="blended/zio/streams/RecoveringJmsApp.scala" section="program" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/RecoveringJmsApp.scala" doctag="program"
 
 There are 2 important differences in comparison to the sample application of the last article:
 
@@ -35,7 +35,7 @@ There are 2 important differences in comparison to the sample application of the
 
 When we run this program with the input stream below, we will notice that the output pauses for a couple of seconds when the reconnect is triggered and then continues sending and receiving messages.
 
-{{< codesection dirref="streamstest" file="blended/zio/streams/RecoveringJmsApp.scala" section="stream" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/RecoveringJmsApp.scala" doctag="stream"
 
 Here is an excerpt from the console output:
 
@@ -54,21 +54,21 @@ Under the covers we use a connection factory that lifts all JMS related calls to
 
 To achieve this, we wrap the connect method into a Semaphore and return the connection if it already exists, otherwise we create a new connection and store it.
 
-{{< codesection dirref="streamssrc" file="blended/zio/streams/jms/ZIOJmsConnectionManager.scala" section="connect" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="connect"
 
 To recover a connection, we perform a JMS close on the existing connect and enter a recovery period. Within that period any execution of the `connect` effect will result in a `JMSException`.
 
-{{< codesection dirref="streamssrc" file="blended/zio/streams/jms/ZIOJmsConnectionManager.scala" section="recover" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="recover"
 
 Finally, the `reconnect`effect simply triggers the recover if an underlying connection currently exists.
 
-{{< codesection dirref="streamssrc" file="blended/zio/streams/jms/ZIOJmsConnectionManager.scala" section="reconnect" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="reconnect"
 
 ## Creating a recoverable Stream (consume messages)
 
 The idea behind the recovering stream is that we connect to the JMS broker with the given connection factory and then start consuming messages until we hit an exception. Whenever we hit an exception, we catch it and enter a recovery phase. After the recovery phase we will try to reconnect and continue to consume messages.
 
-{{< codesection dirref="streamssrc" file="blended/zio/streams/jms/RecoveringJmsStream.scala" section="stream" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/RecoveringJmsStream.scala" doctag="stream"
 
 The idea manifests in `consumeUntilException` and `consumeForEver`. `consumeUntilException` uses the stream we have seen in the last [article]({{< relref "/posts/2020-10-27-ZIOJms.md#receiving-messages" >}}). It will stick all messages that have been received into a one element buffer which we can use later on to create the final stream visible to the outside world.
 
@@ -90,11 +90,11 @@ We will explore the error handling further in another post.
 
 ## Creating a recoverable Sink (send messages)
 
-The idea behind the recovering sink is pretty much the same as for the recovering stream. The subtle difference is that we do not use the sink we have seen in the last [article]({{< relref "/posts/2020-10-27-ZIOJms.md#sending-messages" >}}), but the single send method.
+The idea behind the recovering sink is pretty much the same as for the recovering stream. The subtle difference is that we do not use the sink we have seen in the last [article](2020-10-27-ZIOJms.md), but a method to send a single message.
 
 Apart from that, the pattern to create the recoverable sink is the same as for creating the stream.
 
-{{< codesection dirref="streamssrc" file="blended/zio/streams/jms/RecoveringJmsSink.scala" section="sink" >}}
+CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/RecoveringJmsSink.scala" doctag="sink"
 
 ## Sample log
 
