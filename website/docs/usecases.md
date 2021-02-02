@@ -25,10 +25,7 @@ These secondary containers __never__ communicate with the data-center directly, 
 
 For resilience, the _shop containers_ should be run in a cluster.
 
-![Container](/img/architecture.svg)
-
-```
-{{< kroki imgType="mermaid" >}}
+```kroki imgType="mermaid" imgTitle="Collaborating containers"
 graph TD
   subgraph Shop X
     Bx(Shop X) --> FX1((Fs X1)) --> Bx
@@ -45,7 +42,6 @@ graph TD
   A(Data Center) --> Bx --> A
   A --> By --> A
   A --> Bz --> A
-{{< /kroki >}}
 ```
 
 ## Application requirements

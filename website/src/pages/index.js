@@ -34,8 +34,8 @@ const features = [
     imageAlt: 'Photo by Kevin Ku from Pexels',
     description: (
       <>
-        Help us by browsing our repository and take a look at the
-        <a href="https://github.com/blended-zio/blended-zio/issues"> open issues</a>.
+        Help us by browsing our <a href="https://github.com/blended-zio/blended-zio">repository</a> and
+        take a look at the <a href="https://github.com/blended-zio/blended-zio/issues"> open issues</a>.
       </>
     ),
   },

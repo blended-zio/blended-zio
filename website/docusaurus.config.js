@@ -82,13 +82,15 @@ module.exports = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           remarkPlugins: [
-            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }],
+            [require('remark-kroki-plugin'), { krokiBase: 'https://kroki.io', lang: "kroki", imgRefDir: "../img/kroki", imgDir: "static/img/kroki" }]
           ],
         },
         blog: {
           showReadingTime: false,
           remarkPlugins: [
-            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }]
+            [require('blended-include-code-plugin'), { marker: 'CODE_INCLUDE' }],
+            [require('remark-kroki-plugin'), { krokiBase: 'https://kroki.io', lang: "kroki", imgRefDir: "../img/kroki", imgDir: "static/img/kroki" }]
           ],
         },
         theme: {

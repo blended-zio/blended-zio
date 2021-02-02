@@ -91,7 +91,12 @@ lazy val docs = project
       zioCore,
       uzHttp
     ),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(blendedJmx),
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
+      blendedCore,
+      blendedJmx,
+      blendedStreams,
+      blendedActiveMq
+    ),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
     mdocIn := (baseDirectory in LocalRootProject).value / "docs",
     mdocOut := (baseDirectory in LocalRootProject).value / "website" / "docs",
@@ -99,5 +104,5 @@ lazy val docs = project
     docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
     docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value
   )
-  .dependsOn(blendedJmx)
+  .dependsOn(blendedCore, blendedJmx, blendedStreams, blendedActiveMq)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
