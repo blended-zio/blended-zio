@@ -4,7 +4,7 @@ object Dependencies {
 
   val vAmq        = "5.16.0"
   val vLogback    = "1.2.3"
-  val vZio        = "1.0.4"
+  val vZio        = "1.0.4-2"
   val vZioConfig  = "1.0.0-RC32"
   val vZioLogging = "0.5.5"
   val vZioNio     = "1.0.0-RC9"
