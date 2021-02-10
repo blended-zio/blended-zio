@@ -4,9 +4,16 @@
         <title>Blended ZIO Blog</title>
         <link>https://blended-zio.github.io/blended-zio/blog</link>
         <description>Blended ZIO Blog</description>
-        <lastBuildDate>Thu, 05 Nov 2020 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 09 Feb 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Integration Testing]]></title>
+            <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/integration-testing</link>
+            <guid>integration-testing</guid>
+            <pubDate>Tue, 09 Feb 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Modern applications are normally distributed across collaborating nodes, each of which has to fulfill t's role]]></description>
+        </item>
         <item>
             <title><![CDATA[Keep alive for JMS connections]]></title>
             <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-jms-keepalive</link>
