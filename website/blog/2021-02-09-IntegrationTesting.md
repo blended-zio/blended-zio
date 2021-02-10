@@ -1,7 +1,7 @@
 ---
 slug: integration-testing
 title: Integration Testing
-tags: [ZIO, Testing, Docker, Kubernetes]
+tags: [ZIO, Integration Testing, Docker, Kubernetes]
 author: Andreas Gies
 author_url: https://github.com/atooni
 ---
@@ -19,17 +19,19 @@ library can be found.
 The requirements for an integration test library are derived from an application architecture, that could be called a 
 _satellite architecture_: 
 
-The central part of an installation consists of a set of nodes installed at a data center. Attached to the data center 
-is a number of remote installations. Each remote installation - a satellite - consists of a set of nodes which which make
-up a specific application on the satellite. In such an Architecture all applications of a given type are built from  the 
+In a nutshell, a _satellite architecture_ consists of a central part which consists of a set of nodes intalled at a data center.
+Attached to the data center is a number of remote installations - the satellites. Each remote installation consists of a set of 
+nodes which make up a specific application on the satellite. 
+
+In such an architecture all applications of a given type are built from the 
 same node types and only differ from each other in terms of their configuration. 
 
-Even though such an architecture serves as the mental model for our application, the test principles and differentations
-could be applied to other architectures likewise.
+Even though such an architecture serves as the mental model for our application, the test principles could be applied to other 
+architectures likewise.
 
 :::note
 Consider a retail company operating stores internationally with an international headquarter. The central nodes in that case 
-would provide the interface to the headquarters backend systems, while each store would at least run an instance of a POS 
+would provide the interface to the headquarter's backend systems, while each store would at least run an instance of a POS 
 (Point of Sales) system. The POS might be the same across all stores, in which case we would have only one application type. 
 
 Caused by mergers and aquisitions the POS systems in individual countries could be different and we would have one application 
@@ -63,14 +65,13 @@ behavior of the API using powerful data generators.
 
 :::note 
 Sometimes this is a very fine line to walk.  For example, a component that sends and receives messages via JMS or some other Middleware 
-might need to spin up an ad hoc instance of the middleware component or irequires a test server to talk to. Some articles will argue 
-that involving any external component already belongs in the realm of integration tests.
+might need to spin up an ad hoc instance of the middleware component or a test server to talk to. Some articles will argue that involving 
+any esternal component already belongs in the realm of integration tests.
 
 For a unit test we would prefer an adhoc instance as that makes it easier to provide deterministic pre-conditions. As a general rule, for 
 a unit test we would aim for the least complicated setup without compromising how meaningfull the test is. 
 :::
 
-:::info
 The focal point of our unit test suite is to proof the correctness of our code on the component level. One of the metrics used to evaluate 
 the quality of the unit tests suites is the code coverage. 
 
@@ -80,39 +81,29 @@ with inherited code bases.
 
 In our own project we have coverage of slightly more than 80% and have the golden rule that we do not change the code if we don't have a failing 
 test. 
-:::
 
 ### Integration tests
 
 Again, let's take a moment to think about the nature of tests we encounter at this level:
 
 We are now assembling our components into applications, which will sit at one of the nodes in our satellite architecture. The applications 
-consist of the compiled binaries of our components and also the configuration files which model the connectivity to the outside world and 
+consist of the compiled binaries of our components together with the configuration files which model the connectivity to the outside world and 
 potentially required runtime configuration for our components. 
-
-:::note
-Again, think of the distributed retail application. The central nodes will provide connectivity to the central systems such as the enterprise 
-JMS or messaging backbone. Typical configuration parameters indicate in which environment the application is currently installed (DEV, QA, UAT, PROD)
-and derive which backend systems it needs to connect to. 
-
-The nodes within the store will provide store specific functionality. Typical store parameters include at least a store identifier, so that 
-store specific messaging channels and API endpoints can be derived. 
-:::
 
 The integration tests are now targeting several main areas:
 
-1. __The configuration model is sufficient to use the components in our application scenario.__
+1. The configuration model is sufficient to use the components in our application scenario.
   
    For example, a hard coded JMS destination name would most likely break a test on this level. We could argue that using an arbitrary destination 
    name should be subject to a unit test for the underlying component and essentially that is correct. We would add a requirement to the component
-   that the destination name must be variable and configurable the requirement with a unit test. Then we would come back to our integration test 
+   that the destination name must be variable and configurable and would create a corresponding unit test Then we would come back to our integration test 
    using the component with the correctly configured destination name. 
 
    This is just an example - ideally we would have had the requirement from the beginning, but more subtle parameters that we considered to be 
    constant values might pop up and again we would make them configurable and ideally verify the components obeyance to the configuration with 
    a unit test.
 
-1. __The components collaborate with each other according to the applications design.__
+1. The components collaborate with each other according to the applications design. 
 
    As an example, consider a routing component within the store server. The component should consume inbound messages, determine the routing parameters 
    for the incoming message and apply the routing accordingly. 
@@ -134,58 +125,107 @@ The integration tests are now targeting several main areas:
    Now we can think about the message router within it's larger context. A store server might use an inbound messaging bridge to consume messages from external 
    systems and forward the messages coming in over the bridge to an internal channel where the message router is configured as a listener. 
 
-   In terms of test cases we can still use the same set of tests, but with different channels. Instead of sending messages to the inbound channel 
-   of the message router directly we would send them to an appropriate channel within the central middleware and inspect the potential outcomes of the 
-   router's outbound channel.
+   In terms of test cases we can still use the same set of tests, but with different channels. Instead of sending messages to the inbaund channel 
+   of the message router directly we would send them to an appropriate channel on the central messaging middleware.
 
-To run the integration test suite, the middleware components must be available. If we were to reuse a preinstalled central messaging middleware there would 
-be a potential that interleaving executions of the test suite influence each other. In our own application we have chosen to provide docker images representing 
-the central components - an LDAP server, a central JMS backbone and a central PKI provider. 
+To measure the completeness of our integration test suite the code coverage is not suitable. Instead, we would be interested to cover as many business cases 
+as possible.
 
-Furthermore, the build process must create docker images for each application type involved in the communication. 
+__Looking at the integration tests we can capture these requirements:__
 
-To finally automate the test we have to spin up the relevant docker images and connect them to each other within Docker's network layer. The test executor needs 
-to retrieve port configuration for the docker images and set up the communication channels required for testing accordingly. If we think about the set of configured 
-configuration channels as a __TestEnvironment__, we could say that the __TestSuite__ suite needs to execute within that __TestEnvironment__. 
+- For CI/CD we want to create a minimal, self contained environment in the form of a collection of docker images providing enough functionality to 
+  execute our test suite and spin up a set of collaborting docker containers as the the _system under test_.
 
-:::note
-Within this layer of testing we usually create a minmal environment which allows us to execute our business cases and verify the _communication behavior_ of our 
-applications. Normally, all test cases are executed only once before and the the test suite terminates producing a test report. 
-:::
+- For CI/CD we want to determine the required __TestChannels__ from the started containers.
 
-If we consider our retail application again, we can imagine that integration testing against a minimal set of application containers does not necessarily uncover 
-all potential problems:
+- If we want to execute our integration test suite within a provided environment, we must be able to describe the connectivity to the provided components
+  with configuration files and determine the required __TestChannels__ from that configuration. 
 
-- If more then one store server is connected to the central applications, errors might occur related to interleaving communication. A growing number of containers 
-  might also uncover potential problems with the number of connections on the central side or reveal negative effects regarding the runtime behavior. 
+- We must be able to use the set of __TestChannel__s to provide a __TestEnvironment__.  
 
-- If we would execute the test cases repetative, resource leaks might be uncovered that we would not necessarily see executing the test cases only once.   
+- We want to iterate through the __TestTemplates__ of our __TestSuite__ at least once, creating __TestInstance__s which will be executed by a __TestExecutor__ 
+  producing __TestResult__s. 
 
-This leads to yet another level of testing, _application testing_.
+- As the main focus of the integration test run is to be used in CI/CD, we want to guarantee that the integration test executions eventually terminates.
 
 ### Application tests
 
-We stick to our mental model of a large retail application with a satellite architecture and a large number of satellites. In our testing efforts we want to:
-
-- Create a self contained test environment with a configurable number of satellite nodes that will be used by out test suite. 
-
-- Use the configured environment to determine the required __TestChannels__ and provide the __TestEnvironment__. 
-
-- Treat each __TestCase__ within our __TestSuite__ as a __TestTemplate__. A __TestExecutor__ will continously select select a template, create and execute 
-  a __TestInstance__ capturing the __TestResult__. 
-
--   
-  
-
 At this level it may seem that we are testing the same things as within the integration test, but we want to do it at a larger scale and 
-with a slightly different focus. 
+with a slightly different focus. The main difference is that the _system under test_ is usually larger for application tests than it is for integration
+tests. If we stick to our mental model of a satellite architecture we want to increase the number of satellites, which must also be reflected in 
+our test execution by instantiating tests for all participating satellites.
 
-:::info
-:::
+Also, we do not make the termination of test suite mandatory at this level of testing. Instead, the test executor would continously select a runnable 
+test template, instantiate and execute it. In that case the test executor would produce a stream of test results, which would update statistics for the 
+executed tests. 
 
-## Existing libraries 
+Areas of interest at this level might be:
 
-- ScalaTest
-- ZIO Test
-- Test API's in general 
-- testcontainers.org 
+- The ratio of failed / successfull tests for each test template. 
+- Response times 
+- Resource consumption such as disk space, memory and threads
+- Discovery of resource leaks 
+
+With an increasing number of satellite nodes a docker environment available within CI/CD might not be sufficient to provide the _system under test_. 
+However, such an environment can evolve towards a [kubernetes](https://kubernetes.io) deployment by generating an appropriate setup - for example by 
+using a [helm](https://helm.sh) installation.
+
+__We can list the basic requirements for the test framework at this level:__
+
+- We want to create a self contained test environment with a configurable number of nodes that will be used by our test suite.
+
+- Use the configured environment to determine the required __TestChannels__ and provide the __TestEnvironment__.
+
+- Use a __TestExecutor__ to continously select a _runnable_ __TestTemplate__, create and execute a __TestInstance__ and capture the __TestResult__
+
+- We want to capture all __TestResults__ to build accumulated statistics which can be reported to suitable visualization backends such as Prometheus 
+  or Datadog. 
+
+- Potentially define alerts on the cumulated statistics, for example "The average response time exceeds x milliseconds"
+
+## Definitions
+
+We have captured some requirements and have used some terms without defining them, so let's define them:
+
+#### Test Channel 
+A test channel is a communication endpoint which can be used by the tests to send data to the _system under test_ or retrieve data from the _system under test_. 
+A test channel could be a channel within a message oriented middleware, it could be an interface to the underlying filesystem or just any suitable communication 
+mechanism. 
+
+#### Test Environment
+A test environment is a collection of addreessable _Test Channels_. A test environment is the main component for abstracting the _system under test_ to be used 
+by the test executor. 
+
+#### Test Template 
+A test template is a description of a test. It may be instantiated within a given _Test Environment_ for execution. 
+
+#### Test Instance 
+A test instance is an instantiated test template which can be scheduled by the test executor. 
+
+#### Test Executor
+The test executor is responsible for selecting and instantiating test templates and schedule the test instances for execution.
+
+#### Test Suite 
+A test suite is a collection of test templates.
+
+## Consolidated requirements 
+
+There are some requirements that are kind of implicit from the requirements captured so far, but let's take a minute to make them explicit:
+
+- Test templates are data structures describing a test. The tests will execute only after they have been instantiated and scheduled. 
+
+- In general, a test template should not make assumptions about the environment it is instantiated in. In other words, given the correct 
+  test environment it should be possible to create an instance running within an integration test or an instance running within an application 
+  test. 
+
+- The test framework should provide suitable tools to discover the test environment. 
+
+- The test framework should provide a configuration layer allowing to create the test environment via config files. 
+
+## Test library candidates
+
+- [ScalaTest](https://scalatest.org)
+- [ZIO Test](https://zio.dev/docs/usecases/usecases_testing)
+- [Testcontainers](https://www.testcontainers.org/)
+- [Izumi distage testkit](https://izumi.7mind.io/distage/distage-testkit.html)
+
