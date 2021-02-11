@@ -19,7 +19,7 @@ library can be found.
 The requirements for an integration test library are derived from an application architecture, that could be called a 
 _satellite architecture_: 
 
-In a nutshell, a _satellite architecture_ consists of a central part which consists of a set of nodes intalled at a data center.
+In a nutshell, a _satellite architecture_ consists of a central part which consists of a set of nodes installed at a data center.
 Attached to the data center is a number of remote installations - the satellites. Each remote installation consists of a set of 
 nodes which make up a specific application on the satellite. 
 
@@ -66,7 +66,7 @@ behavior of the API using powerful data generators.
 :::note 
 Sometimes this is a very fine line to walk.  For example, a component that sends and receives messages via JMS or some other Middleware 
 might need to spin up an ad hoc instance of the middleware component or a test server to talk to. Some articles will argue that involving 
-any esternal component already belongs in the realm of integration tests.
+any external component already belongs in the realm of integration tests.
 
 For a unit test we would prefer an adhoc instance as that makes it easier to provide deterministic pre-conditions. As a general rule, for 
 a unit test we would aim for the least complicated setup without compromising how meaningfull the test is. 
@@ -76,7 +76,7 @@ The focal point of our unit test suite is to proof the correctness of our code o
 the quality of the unit tests suites is the code coverage. 
 
 We have to keep in mind though, that even with a coverage of 100% this is not a guarantee the code is free of errors. There might be race 
-conditions or subtle bugs that occurr only in unforeseen circumstances. Also, sometimes 100% might not be achievable easily - especially 
+conditions or subtle bugs that occur only in unforeseen circumstances. Also, sometimes 100% might not be achievable easily - especially 
 with inherited code bases. 
 
 In our own project we have coverage of slightly more than 80% and have the golden rule that we do not change the code if we don't have a failing 
