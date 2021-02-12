@@ -15,8 +15,12 @@ jobs:
           sbt docs/unidoc docs/mdoc
           cd website 
           npm i 
-          yarn deploy
-        env:
-          GIT_USER: atooni
-          USE_SSH: true
-          GIT_DEPLOY_KEY: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
+          yarn build 
+
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: ./website/build
+
