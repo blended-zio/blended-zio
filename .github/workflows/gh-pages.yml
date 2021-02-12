@@ -2,7 +2,7 @@ name: Website
 
 on:
   push:
-    branches: [main]
+    branches: [docs]
     tags: ["*"]
 
 jobs:
@@ -18,4 +18,5 @@ jobs:
           yarn deploy
         env:
           GIT_USER: atooni
-          GIT_DEPLOY_KEY: ${{ secrets.GITHUB_DEPLOY_KEY }}
+          USE_SSH: true
+          GIT_DEPLOY_KEY: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
