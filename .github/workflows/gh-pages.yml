@@ -12,18 +12,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
       - run: |
-          wget https://gnupg.org/ftp/gcrypt/gnupg/gnupg-1.4.23.tar.bz2
-          bzip2 -d gnupg-1.4.23.tar.bz2
-          tar xvf gnupg-1.4.23.tar
-          cd gnupg-1.4.23
-
-          ./configure
-
-          make
-
-          ./gpg --version
-
-      - run: |
           sbt docs/unidoc docs/mdoc
           cd website 
           npm i 
