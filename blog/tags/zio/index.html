@@ -6,19 +6,20 @@
 <meta name="generator" content="Docusaurus v2.0.0-alpha.70">
 <link rel="alternate" type="application/rss+xml" href="/blended-zio/blog/rss.xml" title="Blended ZIO Blog RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/blended-zio/blog/atom.xml" title="Blended ZIO Blog Atom Feed"><title data-react-helmet="true">Posts tagged &quot;zio&quot; | Blended ZIO</title><meta data-react-helmet="true" property="og:title" content="Posts tagged &quot;zio&quot; | Blended ZIO"><meta data-react-helmet="true" name="description" content="Blog | Tagged &quot;zio&quot;"><meta data-react-helmet="true" property="og:description" content="Blog | Tagged &quot;zio&quot;"><meta data-react-helmet="true" name="twitter:card" content="summary_large_image"><meta data-react-helmet="true" name="docusaurus_locale" content="en"><meta data-react-helmet="true" name="docusaurus_tag" content="default"><link data-react-helmet="true" rel="shortcut icon" href="/blended-zio/img/favicon.ico"><link rel="stylesheet" href="/blended-zio/styles.b0c1b4e5.css">
-<link rel="preload" href="/blended-zio/styles.ff7a30a6.js" as="script">
-<link rel="preload" href="/blended-zio/runtime~main.3abbd089.js" as="script">
-<link rel="preload" href="/blended-zio/main.f40baaf4.js" as="script">
-<link rel="preload" href="/blended-zio/1.c3df032e.js" as="script">
-<link rel="preload" href="/blended-zio/2.13b555c9.js" as="script">
-<link rel="preload" href="/blended-zio/6875c492.82ba3600.js" as="script">
-<link rel="preload" href="/blended-zio/b06cd00d.bcfd189f.js" as="script">
-<link rel="preload" href="/blended-zio/a85c7f25.3d31a5b8.js" as="script">
-<link rel="preload" href="/blended-zio/94768e8d.a17698c4.js" as="script">
-<link rel="preload" href="/blended-zio/175ac1a5.9d684df0.js" as="script">
-<link rel="preload" href="/blended-zio/60becede.b97433fa.js" as="script">
-<link rel="preload" href="/blended-zio/56e43570.1f544b99.js" as="script">
-<link rel="preload" href="/blended-zio/632be8fa.aa3cc9f1.js" as="script">
+<link rel="preload" href="/blended-zio/styles.0a9fad06.js" as="script">
+<link rel="preload" href="/blended-zio/runtime~main.03d18536.js" as="script">
+<link rel="preload" href="/blended-zio/main.ebc28332.js" as="script">
+<link rel="preload" href="/blended-zio/1.eb4fd82c.js" as="script">
+<link rel="preload" href="/blended-zio/2.a3e9b792.js" as="script">
+<link rel="preload" href="/blended-zio/3.45d799fc.js" as="script">
+<link rel="preload" href="/blended-zio/6875c492.8781336f.js" as="script">
+<link rel="preload" href="/blended-zio/e6d99264.3b70b6c1.js" as="script">
+<link rel="preload" href="/blended-zio/a85c7f25.f7cfb735.js" as="script">
+<link rel="preload" href="/blended-zio/94768e8d.58457a21.js" as="script">
+<link rel="preload" href="/blended-zio/175ac1a5.c8cd817f.js" as="script">
+<link rel="preload" href="/blended-zio/60becede.40375d29.js" as="script">
+<link rel="preload" href="/blended-zio/56e43570.fd6f696d.js" as="script">
+<link rel="preload" href="/blended-zio/632be8fa.02436c52.js" as="script">
 </head>
 <body>
 <script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){var t=null;try{t=localStorage.getItem("theme")}catch(t){}return t}();t(null!==e?e:"light")}()</script><div id="__docusaurus">
@@ -27,18 +28,19 @@ within the overall architecture. In order to test such an application automatica
 up a test environment on the fly and execute an arbitrary test suite against such an  environment.</p><p>This article defines the requirements for a test framework geared towards integration testing so that existing test
 frameworks can be evaluated against those requirements or a new library can be designed to fulfill them if no existing
 library can be found. </p></section><footer class="row margin-vert--lg"><div class="col"><strong>Tags:</strong><a class="margin-horiz--sm" href="/blended-zio/blog/tags/zio">ZIO</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/integration-testing">Integration Testing</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/docker">Docker</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/kubernetes">Kubernetes</a></div><div class="col text--right"><a aria-label="Read more about Integration Testing" href="/blended-zio/blog/integration-testing"><strong>Read More</strong></a></div></footer></article><article class="margin-bottom--xl"><header><h2 class="margin-bottom--sm blogPostTitle_3-lP"><a href="/blended-zio/blog/zio-jms-keepalive">Keep alive for JMS connections</a></h2><div class="margin-vert--md"><time datetime="2020-11-05T00:00:00.000Z" class="blogPostDate_Ta7i">November 5, 2020 </time></div><div class="avatar margin-vert--md"><div class="avatar__intro"><h4 class="avatar__name"><a href="https://github.com/atooni" target="_blank" rel="noreferrer noopener">Andreas Gies</a></h4><small class="avatar__subtitle"></small></div></div></header><section class="markdown"><p>This article concludes the mini series exploring the ZIO Stream API and shows how a simple keepalive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required. </p></section><footer class="row margin-vert--lg"><div class="col"><strong>Tags:</strong><a class="margin-horiz--sm" href="/blended-zio/blog/tags/zio">ZIO</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/streams">Streams</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/jms">JMS</a></div><div class="col text--right"><a aria-label="Read more about Keep alive for JMS connections" href="/blended-zio/blog/zio-jms-keepalive"><strong>Read More</strong></a></div></footer></article><article class="margin-bottom--xl"><header><h2 class="margin-bottom--sm blogPostTitle_3-lP"><a href="/blended-zio/blog/zio-streams-autorecover">Autorecovery for (JMS) Streams</a></h2><div class="margin-vert--md"><time datetime="2020-10-30T00:00:00.000Z" class="blogPostDate_Ta7i">October 30, 2020 </time></div><div class="avatar margin-vert--md"><div class="avatar__intro"><h4 class="avatar__name"><a href="https://github.com/atooni" target="_blank" rel="noreferrer noopener">Andreas Gies</a></h4><small class="avatar__subtitle"></small></div></div></header><section class="markdown"><p>Today we are going to explore the ZIO streams API and see how we can create a stream that will will enter a recovery phase in certain error scenarios. We will explore how we can deal with exceptions on the connection level while keeping the stream processing code untouched.</p></section><footer class="row margin-vert--lg"><div class="col"><strong>Tags:</strong><a class="margin-horiz--sm" href="/blended-zio/blog/tags/zio">ZIO</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/streams">Streams</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/jms">JMS</a></div><div class="col text--right"><a aria-label="Read more about Autorecovery for (JMS) Streams" href="/blended-zio/blog/zio-streams-autorecover"><strong>Read More</strong></a></div></footer></article><article class="margin-bottom--xl"><header><h2 class="margin-bottom--sm blogPostTitle_3-lP"><a href="/blended-zio/blog/zio-streams-jms">ZIO Streams and JMS</a></h2><div class="margin-vert--md"><time datetime="2020-10-27T00:00:00.000Z" class="blogPostDate_Ta7i">October 27, 2020 </time></div><div class="avatar margin-vert--md"><div class="avatar__intro"><h4 class="avatar__name"><a href="https://github.com/atooni" target="_blank" rel="noreferrer noopener">Andreas Gies</a></h4><small class="avatar__subtitle"></small></div></div></header><section class="markdown"><p>In this article we are going to explore a bit of the ZIO streams API and how it can be used to talk to a JMS broker. The <a href="https://zio.dev/docs/resources/resources" target="_blank" rel="noopener noreferrer">ZIO web site</a> and <a href="https://github.com/aparo/awesome-zio" target="_blank" rel="noopener noreferrer">awesome-zio</a> have a lot of very good articles and talks on ZIO streams covering the basics, so I won&#x27;t repeat those here.</p></section><footer class="row margin-vert--lg"><div class="col"><strong>Tags:</strong><a class="margin-horiz--sm" href="/blended-zio/blog/tags/zio">ZIO</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/streams">Streams</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/jms">JMS</a></div><div class="col text--right"><a aria-label="Read more about ZIO Streams and JMS" href="/blended-zio/blog/zio-streams-jms"><strong>Read More</strong></a></div></footer></article><article class="margin-bottom--xl"><header><h2 class="margin-bottom--sm blogPostTitle_3-lP"><a href="/blended-zio/blog/zio-logging">Use ZIO Logging</a></h2><div class="margin-vert--md"><time datetime="2020-09-28T00:00:00.000Z" class="blogPostDate_Ta7i">September 28, 2020 </time></div><div class="avatar margin-vert--md"><div class="avatar__intro"><h4 class="avatar__name"><a href="https://github.com/atooni" target="_blank" rel="noreferrer noopener">Andreas Gies</a></h4><small class="avatar__subtitle"></small></div></div></header><section class="markdown"><p>In this article we will investigate how we can leverage <a href="https://zio.github.io/zio-logging/" target="_blank" rel="noopener noreferrer">zio-logging</a> in our service implementations while avoiding to add a logging service requirement to the business interfaces.</p></section><footer class="row margin-vert--lg"><div class="col"><strong>Tags:</strong><a class="margin-horiz--sm" href="/blended-zio/blog/tags/zio">ZIO</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/logging">Logging</a><a class="margin-horiz--sm" href="/blended-zio/blog/tags/utilities">Utilities</a></div><div class="col text--right"><a aria-label="Read more about Use ZIO Logging" href="/blended-zio/blog/zio-logging"><strong>Read More</strong></a></div></footer></article></div></main></div></div></div><footer class="footer footer--dark"><div class="container"><div class="row footer__links"><div class="col footer__col"><h4 class="footer__title">Docs</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blended-zio/docs/">Get Started</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">Community</h4><ul class="footer__items"><li class="footer__item"><a href="https://discord.gg/jaHWkWqn" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discord</a></li><li class="footer__item"><a href="https://github.com/blended-zio/blended-zio/discussions" target="_blank" rel="noopener noreferrer" class="footer__link-item">Discussions</a></li></ul></div><div class="col footer__col"><h4 class="footer__title">More</h4><ul class="footer__items"><li class="footer__item"><a class="footer__link-item" href="/blended-zio/blog">Blog</a></li><li class="footer__item"><a href="https://github.com/blended-zio/blended-zio" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2021 Way of Quality GmbH - Built with Docusaurus v2.</div></div></div></footer></div>
-<script src="/blended-zio/styles.ff7a30a6.js"></script>
-<script src="/blended-zio/runtime~main.3abbd089.js"></script>
-<script src="/blended-zio/main.f40baaf4.js"></script>
-<script src="/blended-zio/1.c3df032e.js"></script>
-<script src="/blended-zio/2.13b555c9.js"></script>
-<script src="/blended-zio/6875c492.82ba3600.js"></script>
-<script src="/blended-zio/b06cd00d.bcfd189f.js"></script>
-<script src="/blended-zio/a85c7f25.3d31a5b8.js"></script>
-<script src="/blended-zio/94768e8d.a17698c4.js"></script>
-<script src="/blended-zio/175ac1a5.9d684df0.js"></script>
-<script src="/blended-zio/60becede.b97433fa.js"></script>
-<script src="/blended-zio/56e43570.1f544b99.js"></script>
-<script src="/blended-zio/632be8fa.aa3cc9f1.js"></script>
+<script src="/blended-zio/styles.0a9fad06.js"></script>
+<script src="/blended-zio/runtime~main.03d18536.js"></script>
+<script src="/blended-zio/main.ebc28332.js"></script>
+<script src="/blended-zio/1.eb4fd82c.js"></script>
+<script src="/blended-zio/2.a3e9b792.js"></script>
+<script src="/blended-zio/3.45d799fc.js"></script>
+<script src="/blended-zio/6875c492.8781336f.js"></script>
+<script src="/blended-zio/e6d99264.3b70b6c1.js"></script>
+<script src="/blended-zio/a85c7f25.f7cfb735.js"></script>
+<script src="/blended-zio/94768e8d.58457a21.js"></script>
+<script src="/blended-zio/175ac1a5.c8cd817f.js"></script>
+<script src="/blended-zio/60becede.40375d29.js"></script>
+<script src="/blended-zio/56e43570.fd6f696d.js"></script>
+<script src="/blended-zio/632be8fa.02436c52.js"></script>
 </body>
 </html>
