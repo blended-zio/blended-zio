@@ -13,8 +13,9 @@ jobs:
       - uses: olafurpg/setup-scala@v10
       - uses: olafurpg/setup-gpg@v3
       - run: |
-          sbt doc docs/mdoc
+          sbt docs/unidoc docs/mdoc
           cd website 
+          npm i 
           yarn deploy
         env:
           GIT_USER: atooni
