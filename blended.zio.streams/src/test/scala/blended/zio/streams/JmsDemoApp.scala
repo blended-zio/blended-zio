@@ -53,7 +53,7 @@ object JmsDemoApp extends App {
   // end:doctag<producer>
 
   // doctag<consumer>
-  private def consumer(con: JmsConnection): ZIO[ZEnv with Logging, Throwable, Unit] =
+  private def consumer(con: JmsConnection) = 
     createSession(con).use { session =>
       createConsumer(session, testDest).use { cons =>
         jmsStream(cons).collect { case m: TextMessage => m.getText() }

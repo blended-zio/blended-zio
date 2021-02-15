@@ -44,7 +44,7 @@ package object jms {
            } yield ()
   } yield con
 
-  def createSession(con: JmsConnection): ZManaged[ZEnv with Logging, JMSException, JmsSession] = ZManaged.make((for {
+  def createSession(con: JmsConnection) = ZManaged.make((for {
     js <- effectBlocking(
             con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
           )
@@ -57,7 +57,7 @@ package object jms {
     } yield ()
   )
 
-  def createProducer(js: JmsSession): ZManaged[ZEnv with Logging, JMSException, JmsProducer] = ZManaged.make(for {
+  def createProducer(js: JmsSession) = ZManaged.make(for {
     n <- ZIO.succeed(js.nextProdName)
     p <- effectBlocking(
            js.session.createProducer(null)
@@ -70,7 +70,7 @@ package object jms {
     } yield ()
   )
 
-  def createConsumer(js: JmsSession, dest: JmsDestination): ZManaged[ZEnv with Logging, JMSException, JmsConsumer] =
+  def createConsumer(js: JmsSession, dest: JmsDestination) =
     ZManaged.make(
       for {
         n <- ZIO.succeed(js.nextConsName)
@@ -96,7 +96,7 @@ package object jms {
     text: String,
     prod: JmsProducer,
     dest: JmsDestination
-  ): ZIO[ZEnv with Logging, JMSException, Unit] = (for {
+  ) = (for {
     msg <- effectBlocking(prod.session.session.createTextMessage(text))
     d   <- dest.create(prod.session)
     _   <- effectBlocking(prod.producer.send(d, msg))
@@ -107,7 +107,7 @@ package object jms {
   // end:doctag<send>
 
   // doctag<receive>
-  def receive(cons: JmsConsumer): ZIO[ZEnv with Logging, JMSException, Option[Message]] = (for {
+  def receive(cons: JmsConsumer) = (for {
     msg <- effectBlocking(Option(cons.consumer.receiveNoWait()))
     _   <- if (msg.isDefined) log.debug(s"Received [$msg] with [$cons]") else ZIO.unit
   } yield msg).flatMapError { t =>
@@ -116,7 +116,7 @@ package object jms {
   // end:doctag<receive>
 
   // doctag<stream>
-  def jmsStream(cons: JmsConsumer): ZStream[ZEnv with Logging, JMSException, Message] =
+  def jmsStream(cons: JmsConsumer) =
     ZStream.repeatEffect(receive(cons)).collect { case Some(s) => s }
   // end:doctag<stream>
 
@@ -125,7 +125,7 @@ package object jms {
     clientId: String,
     dest: JmsDestination,
     retryInterval: Duration
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, ZStream[ZEnv with Logging, Nothing, String]] = for {
+  ) = for {
     streamFact <- RecoveringJmsStream.make(cf, clientId, retryInterval)
     str        <- streamFact.stream(dest)
   } yield str
@@ -134,7 +134,7 @@ package object jms {
   def jmsSink(
     prod: JmsProducer,
     dest: JmsDestination
-  ): ZSink[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, String, String, Unit] =
+  ) =
     ZSink.foreach[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, String](s => send(s, prod, dest))
   // end:doctag<sink>
 
@@ -143,13 +143,7 @@ package object jms {
     clientId: String,
     dest: JmsDestination,
     retryInterval: Duration
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, ZSink[
-    ZEnv with Logging,
-    Nothing,
-    String,
-    String,
-    Unit
-  ]] = for {
+  ) = for {
     sinkFact <- RecoveringJmsSink.make(cf, clientId)
     s        <- sinkFact.sink(dest, retryInterval)
   } yield s

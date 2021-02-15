@@ -22,8 +22,8 @@
     "prismjs": "^1.23.0",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
-    "blended-include-code-plugin": "0.1.0",
-    "remark-kroki-plugin": "0.0.2"
+    "blended-include-code-plugin": "0.1.2",
+    "remark-kroki-plugin": "0.1.1"
   },
   "browserslist": {
     "production": [
