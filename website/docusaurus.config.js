@@ -75,6 +75,7 @@ module.exports = {
       copyright: `Copyright © ${new Date().getFullYear()} Way of Quality GmbH - Built with Docusaurus v2.`,
     },
   },
+  // doctag<configure>
   presets: [
     [
       '@docusaurus/preset-classic',
@@ -102,4 +103,5 @@ module.exports = {
       },
     ],
   ],
+  // end:doctag<configure>
 };
