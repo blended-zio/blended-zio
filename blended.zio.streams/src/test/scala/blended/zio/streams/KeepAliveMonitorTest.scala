@@ -24,8 +24,7 @@ object KeepAliveMonitorTest extends DefaultRunnableSpec {
 
   private val signalKeepAlive = testM("signal when the maximum keep alive is reached")(for {
     kam <- DefaultKeepAliveMonitor.make("signal", 3)
-    f   <- kam.run(10.millis).fork
-    _   <- f.join
+    _   <- kam.run(10.millis)
     cnt <- kam.current
   } yield assert(cnt)(equalTo(3)))
 
@@ -33,8 +32,7 @@ object KeepAliveMonitorTest extends DefaultRunnableSpec {
     kam <- DefaultKeepAliveMonitor.make("alive", 3)
     _   <- kam.alive.schedule(Schedule.spaced(20.millis)).fork
     f   <- kam.run(50.millis).fork
-    f2  <- f.interrupt.schedule(Schedule.duration(500.millis)).fork
-    _   <- f2.join
+    _   <- f.interrupt.schedule(Schedule.duration(500.millis))
     cnt <- kam.current
   } yield assert(cnt)(isLessThan(3)))
 

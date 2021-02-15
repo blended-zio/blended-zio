@@ -5,8 +5,6 @@ import java.text.SimpleDateFormat
 import javax.jms._
 import java.util.concurrent.atomic.AtomicLong
 
-import zio._
-import zio.logging._
 import zio.duration.Duration
 
 sealed trait JmsApiObject {
@@ -23,8 +21,7 @@ object JmsApiObject {
 final case class JmsConnectionFactory(
   override val id: String,
   factory: ConnectionFactory,
-  reconnectInterval: Duration,
-  onConnect: JmsConnection => ZIO[ZEnv with Logging, Nothing, Unit] = _ => ZIO.unit
+  reconnectInterval: Duration
 ) extends JmsApiObject {
   def connId(clientId: String): String = s"$id-$clientId"
 }

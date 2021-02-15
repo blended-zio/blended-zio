@@ -28,8 +28,10 @@ object JmsDemoApp extends App {
   private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
     logEnv >>> AMQBroker.simple("simple")
 
-  private val combinedEnv: ZLayer[ZEnv, Throwable, ZEnv with AMQBroker.AMQBroker with Logging] =
-    logEnv ++ brokerEnv
+  private val mgrEnv = ZIOJmsConnectionManager.Service.make
+
+  private val combinedEnv =
+    logEnv ++ brokerEnv ++ mgrEnv
   // end:doctag<layer>
 
   // doctag<stream>
@@ -46,7 +48,7 @@ object JmsDemoApp extends App {
     JmsConnectionFactory("amq:amq", new ActiveMQConnectionFactory("vm://simple?create=false"), 5.seconds)
 
   // doctag<producer>
-  private def producer(con: JmsConnection): ZIO[ZEnv with Logging, Throwable, Unit] =
+  private def producer(con: JmsConnection) =
     createSession(con).use(session => createProducer(session).use(prod => stream.run(jmsSink(prod, testDest))))
   // end:doctag<producer>
 
@@ -61,21 +63,21 @@ object JmsDemoApp extends App {
   // end:doctag<consumer>
 
   // doctag<program>
-  private val program: ZIO[ZEnv with AMQBroker.AMQBroker with Logging, Throwable, Unit] = for {
-    si <- ZIOJmsConnectionManager.Service.singleton
-    _  <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
-    _  <- (for {
-            con <- connect(cf, "sample")
-            _   <- reconnect(con, Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork
-            _   <- for {
-                     c <- consumer(con).fork
-                     p <- producer(con).fork
-                     _ <- c.join
-                     _ <- p.join
-                   } yield ()
-          } yield ())
-            .provideSomeLayer[ZEnv with AMQBroker.AMQBroker with Logging](ZIOJmsConnectionManager.Service.live(si))
-  } yield ()
+  private val program =
+    for {
+      _      <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
+      conMgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+      _      <- (for {
+                  con <- conMgr.connect(cf, "sample")
+                  _   <- conMgr.reconnect(con, Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork
+                  _   <- for {
+                           c <- consumer(con).fork
+                           p <- producer(con).fork
+                           _ <- c.join
+                           _ <- p.join
+                         } yield ()
+                } yield ())
+    } yield ()
   // end:doctag<program>
 
   // doctag<run>

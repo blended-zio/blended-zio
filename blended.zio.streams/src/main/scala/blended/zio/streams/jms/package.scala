@@ -134,8 +134,8 @@ package object jms {
   def jmsSink(
     prod: JmsProducer,
     dest: JmsDestination
-  ): ZSink[ZEnv with Logging, JMSException, String, String, Unit] =
-    ZSink.foreach[ZEnv with Logging, JMSException, String](s => send(s, prod, dest))
+  ): ZSink[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, String, String, Unit] =
+    ZSink.foreach[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, String](s => send(s, prod, dest))
   // end:doctag<sink>
 
   def recoveringJmsSink(

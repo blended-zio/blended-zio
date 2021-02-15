@@ -6,8 +6,6 @@ import zio._
 import zio.blocking._
 import zio.logging._
 
-import blended.zio.streams.SingletonService
-
 object ZIOJmsConnectionManager {
 
   type ZIOJmsConnectionManager = Has[Service]
@@ -26,14 +24,9 @@ object ZIOJmsConnectionManager {
 
   object Service {
 
-    // doctag<singleton>
-    val singleton: ZIO[Any, Nothing, SingletonService[Service]] =
-      SingletonService.fromEffect(createLive)
+    def make: ZLayer[Any, Nothing, ZIOJmsConnectionManager] = ZLayer.fromEffect(makeService)
 
-    def live(s: SingletonService[Service]): ZLayer[Any, Nothing, ZIOJmsConnectionManager] = ZLayer.fromEffect(s.service)
-    // end:doctag<singleton>
-
-    private def createLive: ZIO[Any, Nothing, Service] = for {
+    private val makeService: ZIO[Any, Nothing, Service] = for {
       cons <- Ref.make(Map.empty[String, JmsConnection])
       rec  <- Ref.make(List.empty[String])
       s    <- Semaphore.make(1)
@@ -180,11 +173,11 @@ object ZIOJmsConnectionManager {
               }.refineOrDie { case t: JMSException => t }
         c   = JmsConnection(cf, jc, clientId)
         _  <- addConnection(c)
-        _  <- for {
-                _ <- log.trace(s"Executing onConnect for [$c]")
-                f <- cf.onConnect(c).forkDaemon
-                _ <- log.debug(f.toString)
-              } yield ()
+        // _  <- for {
+        //         _ <- log.trace(s"Executing onConnect for [$c]")
+        //         f <- cf.onConnect(c).forkDaemon
+        //         _ <- log.debug(f.toString)
+        //       } yield ()
         _  <- log.debug(s"Created [$c]")
       } yield c
 

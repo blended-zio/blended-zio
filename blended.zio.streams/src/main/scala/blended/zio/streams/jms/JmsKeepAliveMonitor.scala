@@ -23,12 +23,11 @@ object JmsKeepAliveMonitor {
     dest: JmsDestination,
     interval: Duration,
     allowed: Int
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, Int] = for {
+  ) = for {
     kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", allowed)
     send <- startKeepAliveSender(con, dest, interval).fork
     rec  <- startKeepAliveReceiver(con, dest, kam).fork
-    f    <- kam.run(interval).fork
-    _    <- f.join
+    _    <- kam.run(interval)
     _    <- send.interrupt *> rec.interrupt
     c    <- kam.current
   } yield (c)
@@ -39,7 +38,7 @@ object JmsKeepAliveMonitor {
     con: JmsConnection,
     dest: JmsDestination,
     interval: Duration
-  ): ZIO[ZEnv with Logging, JMSException, Unit] = {
+  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, Unit] = {
 
     val stream: ZStream[ZEnv, Nothing, String] = ZStream
       .fromSchedule(Schedule.spaced(interval))

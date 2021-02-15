@@ -26,8 +26,10 @@ object RecoveringJmsApp extends App {
   private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
     logEnv >>> AMQBroker.simple("simple")
 
-  private val combinedEnv: ZLayer[ZEnv, Throwable, ZEnv with AMQBroker.AMQBroker with Logging] =
-    logEnv ++ brokerEnv
+  private val mgrEnv = ZIOJmsConnectionManager.Service.make
+
+  private val combinedEnv =
+    logEnv ++ brokerEnv ++ mgrEnv
 
   // doctag<stream>
   private val stream: ZStream[ZEnv, Nothing, String] = ZStream
@@ -49,25 +51,24 @@ object RecoveringJmsApp extends App {
   private val testDest: JmsDestination = JmsQueue("sample")
 
   // doctag<program>
-  private val program: ZIO[ZEnv with AMQBroker.AMQBroker with Logging, Throwable, Unit] = {
-    val logic = for {
-      mgr       <- ZIO.service[ZIOJmsConnectionManager.Service]
-      _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
-      f         <- ZIO.unit.schedule(Schedule.duration(30.seconds)).fork
-      _         <-
-        mgr.reconnect(amqCF.connId(clientId), Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork
-      jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
-      jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
-      consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
-      producer  <- stream.run(jmsSink).fork
-      _         <- f.join >>> consumer.interrupt >>> producer.interrupt
-    } yield ()
+  private val program = for {
+    _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
+    mgr       <- ZIO.service[ZIOJmsConnectionManager.Service]
+    f         <- ZIO.unit.schedule(Schedule.duration(30.seconds)).fork
+    _         <- mgr
+                   .reconnect(
+                     amqCF.connId(clientId),
+                     Some(new Exception("Boom"))
+                   )
+                   .schedule(Schedule.duration(10.seconds))
+                   .fork
+    jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
+    jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
+    consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
+    producer  <- stream.run(jmsSink).fork
+    _         <- f.join >>> consumer.interrupt >>> producer.interrupt
+  } yield ()
 
-    for {
-      si <- ZIOJmsConnectionManager.Service.singleton
-      _  <- logic.provideSomeLayer[ZEnv with AMQBroker.AMQBroker with Logging](ZIOJmsConnectionManager.Service.live(si))
-    } yield ()
-  }
   // end:doctag<program>
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = program
