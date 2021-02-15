@@ -93,7 +93,6 @@ CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zi
 
 In here we see that the case class also contains an effect which will be executed every time a physical connection to the JMS broker has been established. This effect takes the `JMSConnection` as a parameter. We can now use `onConnect` to set up the keep alive monitor.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala" doctag="keepalive"
 
 Let's break this down a bit:
 
@@ -107,25 +106,11 @@ Let's break this down a bit:
 
 With the keepAlive method in place we can now create the connection factory. Again, we see an instance of the connection manager service passed through.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala" doctag="factory"
 
 ## The program to be run
 
 First of all we need to create an instance of a `ZIOJmsConnectionManager.Service`. This instance is then passed to the actual logic, so that the keep alive monitor can use it to inject it into the environment of `JMSKeepAliveMonitor.run`. The instance is also required by the logic effect itself, otherwise the connections could not be established to create the streams and sinks.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala" doctag="program"
-
-The `SingletonService` here simply encapsulates a reference to an `Option[A]` and an effect to create an `A` to create an `A` upon the first retrieval. Other retrievals will simply reuse the instance created before.
-
-:::caution
-Using the Singleton is an antipattern and the connection manager will be refactored not to use it in future versions. 
-:::
-
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/SingletonService.scala" 
-
-The `ZIOJmsConnectionManager` uses the `SingletonService` as follows:
-
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="singleton"
 
 ## Conclusion
 

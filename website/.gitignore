@@ -1,9 +1,9 @@
 # Dependencies
-/node_modules
+node_modules/
 
 # Production
-/build
-/docs_out
+build/
+docs/
 
 # Generated files
 .docusaurus
