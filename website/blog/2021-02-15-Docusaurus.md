@@ -31,7 +31,7 @@ In many cases we want to reference code either from within our own project or fr
 
 Within the documentation we often have the requirement to produce technical images such as graph visualizations, flow charts, sequence diagrams etc. Rather than using a dedicated graphics program, we prefer to create the images from a textual description. There are many generators that support that. 
 
-The fantastic [Kroki Web Service](https://kroki.io/) provides a unified web service as a common interface to many generators that can create images from a special DSL. 
+The fantastic [Kroki Web Service](https://kroki.io/) provides a unified web service as a common interface to many generators that can create images from various specialised DSL's. 
 
 The [Kroki Image Plugin](https://www.npmjs.com/package/remark-kroki-plugin) is used within _Blended ZIO_ to execute the Kroki web service for code blocks having `kroki` as their language. 
 
