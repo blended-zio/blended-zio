@@ -7,14 +7,14 @@ import zio.duration._
 import zio.logging._
 import zio.stream._
 
-import blended.zio.streams.jms.ZIOJmsConnectionManager.ZIOJmsConnectionManager
+import blended.zio.streams.jms.ZIOJmsConnectionManager
 
 private[jms] object RecoveringJmsSink {
 
   def make(
     cf: JmsConnectionFactory,
     clientId: String
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, RecoveringJmsSink] =
+  ) =
     for {
       q <- zio.Queue.bounded[String](1)
     } yield new RecoveringJmsSink(cf, clientId) {
@@ -32,28 +32,25 @@ sealed abstract class RecoveringJmsSink private (
   def sink(
     dest: JmsDestination,
     retryInterval: Duration
-  ): ZIO[
-    ZEnv with Logging with ZIOJmsConnectionManager,
-    Nothing,
-    ZSink[ZEnv with Logging, Nothing, String, String, Unit]
-  ] = {
+  ) = {
 
     def produceOne(p: JmsProducer): ZIO[ZEnv with Logging, JMSException, Unit] = buffer.take.flatMap { s: String =>
       send(s, p, dest)
     }
 
-    def produceForever: ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, Unit] = {
+    def produceForever: ZIO[ZEnv with Logging with ZIOJmsConnectionManager.ZIOJmsConnectionManager, Nothing, Unit] = {
       val part = for {
-        _   <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
-        con <- connect(factory, clientId)
-        _   <- createSession(con).use { jmsSess =>
-                 createProducer(jmsSess).use { p =>
-                   for {
-                     f <- produceOne(p).forever.fork
-                     _ <- f.join
-                   } yield ()
-                 }
-               }
+        _      <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
+        conMgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+        con    <- conMgr.connect(factory, clientId)
+        _      <- createSession(con).use { jmsSess =>
+                    createProducer(jmsSess).use { p =>
+                      for {
+                        f <- produceOne(p).forever.fork
+                        _ <- f.join
+                      } yield ()
+                    }
+                  }
       } yield ()
 
       part.catchAll { _ =>

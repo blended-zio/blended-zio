@@ -1,10 +1,17 @@
 package blended.zio.streams.jms
 
 import javax.jms._
+import java.util.concurrent.TimeUnit
 
 import zio._
+import zio.stream._
+import zio.clock._
 import zio.blocking._
 import zio.logging._
+
+import blended.zio.streams.{ KeepAliveMonitor, DefaultKeepAliveMonitor }
+import java.text.SimpleDateFormat
+import blended.zio.streams.KeepAliveException
 
 object ZIOJmsConnectionManager {
 
@@ -12,8 +19,11 @@ object ZIOJmsConnectionManager {
 
   trait Service {
     // Create a connection for a given Connection Factory with a given client id.
-    def connect(cf: JmsConnectionFactory, clientId: String): ZIO[ZEnv with Logging, JMSException, JmsConnection]
-    // Reconnect a given connection with an optional cause and a given interval after which the reconnect should happen
+    def connect(
+      cf: JmsConnectionFactory,
+      clientId: String
+    ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, JmsConnection]
+    // Reconnect a given connection with an optional cause
     def reconnect(con: JmsConnection, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
     def reconnect(id: String, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
     // Close a given connection for good and don't reconnect
@@ -32,7 +42,7 @@ object ZIOJmsConnectionManager {
       s    <- Semaphore.make(1)
     } yield {
 
-      val cf = new DefaultConnectionManager {
+      val conMgr = new DefaultConnectionManager {
         override private[jms] val conns      = cons
         override private[jms] val recovering = rec
         override private[jms] val sem        = s
@@ -42,15 +52,19 @@ object ZIOJmsConnectionManager {
         override def connect(
           jmsCf: JmsConnectionFactory,
           clientId: String
-        ): ZIO[zio.ZEnv with zio.logging.Logging, JMSException, JmsConnection]                                   = cf.connect(jmsCf, clientId)
+        ) = conMgr.connect(jmsCf, clientId)
+
         override def reconnect(
           con: JmsConnection,
           cause: Option[Throwable]
-        ): ZIO[ZEnv with Logging, JMSException, Unit]                                                            = cf.reconnect(con, cause)
+        ): ZIO[ZEnv with Logging, JMSException, Unit] = conMgr.reconnect(con, cause)
+
         override def reconnect(id: String, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit] =
-          cf.reconnect(id, cause)
-        override def close(con: JmsConnection): ZIO[ZEnv with Logging, JMSException, Unit]                       = cf.close(con)
-        override def shutdown: ZIO[ZEnv with Logging, Nothing, Unit]                                             = cf.shutdown
+          conMgr.reconnect(id, cause)
+
+        override def close(con: JmsConnection): ZIO[ZEnv with Logging, JMSException, Unit] = conMgr.close(con)
+
+        override def shutdown: ZIO[ZEnv with Logging, Nothing, Unit] = conMgr.shutdown
       }
     }
 
@@ -70,7 +84,7 @@ object ZIOJmsConnectionManager {
       private[jms] def connect(
         cf: JmsConnectionFactory,
         clientId: String
-      ): ZIO[ZEnv with Logging, JMSException, JmsConnection] = {
+      ) = {
 
         val cid = cf.connId(clientId)
 
@@ -112,7 +126,7 @@ object ZIOJmsConnectionManager {
       private def recover(
         c: JmsConnection,
         t: Option[Throwable]
-      ): ZIO[ZEnv with Logging, JMSException, Unit] = for {
+      ) = for {
         _ <- close(c)
         _ <- scheduleRecover(c.factory, c.clientId, t)
       } yield ()
@@ -121,7 +135,7 @@ object ZIOJmsConnectionManager {
         cf: JmsConnectionFactory,
         clientId: String,
         t: Option[Throwable]
-      ): ZIO[ZEnv with Logging, Nothing, Unit] = {
+      ) = {
 
         val cid = cf.connId(clientId)
 
@@ -143,7 +157,7 @@ object ZIOJmsConnectionManager {
       private def checkedConnect(
         cf: JmsConnectionFactory,
         clientId: String
-      ): ZIO[ZEnv with Logging, JMSException, JmsConnection] = {
+      ) = {
 
         val cid = cf.connId(clientId)
 
@@ -159,56 +173,96 @@ object ZIOJmsConnectionManager {
       private def doConnect(
         cf: JmsConnectionFactory,
         clientId: String
-      ): ZIO[ZEnv with Logging, JMSException, JmsConnection] = for {
-        _  <- log.debug(s"Connecting to [${cf.id}] with clientId [$clientId]")
-        jc <- effectBlocking {
-                val jmsConn: Connection = cf.factory.createConnection()
-                jmsConn.setClientID(clientId)
-                jmsConn.start()
-                jmsConn
-              }.flatMapError { t =>
-                for {
-                  _ <- scheduleRecover(cf, clientId, Some(t))
-                } yield t
-              }.refineOrDie { case t: JMSException => t }
-        c   = JmsConnection(cf, jc, clientId)
-        _  <- addConnection(c)
-        // _  <- for {
-        //         _ <- log.trace(s"Executing onConnect for [$c]")
-        //         f <- cf.onConnect(c).forkDaemon
-        //         _ <- log.debug(f.toString)
-        //       } yield ()
-        _  <- log.debug(s"Created [$c]")
-      } yield c
+      ) = {
 
-      private[jms] def close(c: JmsConnection): ZIO[ZEnv with Logging, JMSException, Unit] = (ZIO.uninterruptible {
+        def addKeepAlive(con: JmsConnection, keepAlive: JmsKeepAliveMonitor) = {
+
+          // doctag<sender>
+          val startKeepAliveSender = {
+
+            val sdf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss:SSS")
+
+            val stream = ZStream
+              .fromSchedule(Schedule.spaced(keepAlive.interval))
+              .mapM(_ =>
+                currentTime(TimeUnit.MILLISECONDS)
+                  .map(t => s"KeepAlive ($con) : ${sdf.format(t)}")
+              )
+
+            createSession(con).use(jmsSess =>
+              createProducer(jmsSess).use(prod => stream.run(jmsSink(prod, keepAlive.dest)))
+            )
+          }
+          // end:doctag<sender>
+
+          // doctag<receiver>
+          def startKeepAliveReceiver(kam: KeepAliveMonitor) = createSession(con).use { jmsSess =>
+            createConsumer(jmsSess, keepAlive.dest).use(cons => jmsStream(cons).foreach(_ => kam.alive))
+          }
+          // end:doctag<receiver>
+
+          val run = for {
+            kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed)
+            send <- startKeepAliveSender.fork
+            rec  <- startKeepAliveReceiver(kam).fork
+            _    <- kam.run(keepAlive.interval)
+            _    <- send.interrupt *> rec.interrupt
+            c    <- kam.current
+          } yield (c)
+
+          for {
+            _ <- log.debug(s"Adding keep Alive to $con")
+            _ <- run.flatMap(missed => reconnect(con, Some(new KeepAliveException(con.id, missed)))).forkDaemon
+          } yield ()
+        }
+
+        for {
+          _  <- log.debug(s"Connecting to [${cf.id}] with clientId [$clientId]")
+          jc <- effectBlocking {
+                  val jmsConn: Connection = cf.factory.createConnection()
+                  jmsConn.setClientID(clientId)
+                  jmsConn.start()
+                  jmsConn
+                }.flatMapError { t =>
+                  for {
+                    _ <- scheduleRecover(cf, clientId, Some(t))
+                  } yield t
+                }.refineOrDie { case t: JMSException => t }
+          c   = JmsConnection(cf, jc, clientId)
+          _  <- addConnection(c)
+          _  <- ZIO.foreach(cf.keepAlive)(ka => addKeepAlive(c, ka))
+          _  <- log.debug(s"Created [$c]")
+        } yield c
+      }
+
+      private[jms] def close(c: JmsConnection) = (ZIO.uninterruptible {
         effectBlocking(c.conn.close) *> removeConnection(c)
       } <* log.debug(s"Closed [$c]")).refineOrDie { case t: JMSException => t }
 
-      private[jms] def shutdown: ZIO[ZEnv with Logging, Nothing, Unit]                     = (for {
+      private[jms] def shutdown                = (for {
         lc <- conns.get.map(_.view.values)
         _  <- ZIO.foreach(lc)(c => close(c))
       } yield ()).catchAll(_ => ZIO.unit)
 
       // Get a connection from the connection map if it exists
-      private def getConnection(id: String): ZIO[ZEnv with Logging, Nothing, Option[JmsConnection]] = for {
+      private def getConnection(id: String) = for {
         cm <- conns.get
         _  <- log.trace(s"Getting connection [$id]from map : $cm")
         cr  = cm.get(id)
       } yield cr
 
-      private def addConnection(c: JmsConnection): ZIO[ZEnv with Logging, Nothing, Unit] = for {
+      private def addConnection(c: JmsConnection) = for {
         cm <- conns.updateAndGet(_ ++ Map(c.id -> c))
         _  <- log.trace(s"Stored JMS connections : $cm")
       } yield ()
 
-      private def removeConnection(c: JmsConnection): ZIO[ZEnv with Logging, Nothing, Unit] = for {
+      private def removeConnection(c: JmsConnection) = for {
         cm <- conns.updateAndGet(_ - c.id)
         _  <- log.trace(s"Stored JMS connections after deleting [$c]: $cm")
       } yield ()
 
       // Check whether a connection is currently recovering
-      private def isRecovering(id: String): ZIO[Any, Nothing, Boolean] = recovering.get.map(_.contains(id))
+      private def isRecovering(id: String) = recovering.get.map(_.contains(id))
     }
   }
 }

@@ -45,7 +45,7 @@ object JmsDemoApp extends App {
 
   private val testDest: JmsDestination = JmsQueue("sample")
   private val cf: JmsConnectionFactory =
-    JmsConnectionFactory("amq:amq", new ActiveMQConnectionFactory("vm://simple?create=false"), 5.seconds)
+    JmsConnectionFactory("amq:amq", new ActiveMQConnectionFactory("vm://simple?create=false"), 5.seconds, None)
 
   // doctag<producer>
   private def producer(con: JmsConnection) =
@@ -53,7 +53,7 @@ object JmsDemoApp extends App {
   // end:doctag<producer>
 
   // doctag<consumer>
-  private def consumer(con: JmsConnection) = 
+  private def consumer(con: JmsConnection) =
     createSession(con).use { session =>
       createConsumer(session, testDest).use { cons =>
         jmsStream(cons).collect { case m: TextMessage => m.getText() }

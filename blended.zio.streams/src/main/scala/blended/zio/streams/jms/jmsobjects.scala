@@ -17,11 +17,18 @@ object JmsApiObject {
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss:SSS")
 }
 
+final case class JmsKeepAliveMonitor(
+  dest: JmsDestination,
+  interval: Duration,
+  allowed: Int
+)
+
 // doctag<connection>
 final case class JmsConnectionFactory(
   override val id: String,
   factory: ConnectionFactory,
-  reconnectInterval: Duration
+  reconnectInterval: Duration,
+  keepAlive: Option[JmsKeepAliveMonitor]
 ) extends JmsApiObject {
   def connId(clientId: String): String = s"$id-$clientId"
 }

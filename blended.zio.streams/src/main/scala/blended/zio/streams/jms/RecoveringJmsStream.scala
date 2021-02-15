@@ -7,7 +7,7 @@ import zio.duration._
 import zio.logging._
 import zio.stream._
 
-import blended.zio.streams.jms.ZIOJmsConnectionManager.ZIOJmsConnectionManager
+import blended.zio.streams.jms.ZIOJmsConnectionManager
 
 private[jms] object RecoveringJmsStream {
 
@@ -15,12 +15,11 @@ private[jms] object RecoveringJmsStream {
     cf: JmsConnectionFactory,
     clientId: String,
     retryInterval: Duration
-  ): ZIO[ZEnv with Logging, Nothing, RecoveringJmsStream] =
-    for {
-      q <- zio.Queue.bounded[String](1)
-    } yield new RecoveringJmsStream(cf, clientId, retryInterval) {
-      override private[jms] val buffer: zio.Queue[String] = q
-    }
+  ) = for {
+    q <- zio.Queue.bounded[String](1)
+  } yield new RecoveringJmsStream(cf, clientId, retryInterval) {
+    override private[jms] val buffer: zio.Queue[String] = q
+  }
 }
 
 sealed abstract class RecoveringJmsStream private (
@@ -34,18 +33,19 @@ sealed abstract class RecoveringJmsStream private (
   // doctag<stream>
   def stream(
     dest: JmsDestination
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, ZStream[ZEnv with Logging, Nothing, String]] = {
+  ) = {
 
-    def consumeUntilException(cons: JmsConsumer): ZIO[ZEnv with Logging, JMSException, Unit] = jmsStream(cons).collect {
-      case tm: TextMessage => tm.getText()
+    def consumeUntilException(cons: JmsConsumer) = jmsStream(cons).collect { case tm: TextMessage =>
+      tm.getText()
     }
       .foreach(s => buffer.offer(s))
 
-    def consumeForEver: ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, Unit] = {
+    def consumeForEver: ZIO[ZEnv with Logging with ZIOJmsConnectionManager.ZIOJmsConnectionManager, Nothing, Unit] = {
       val part = for {
-        _   <- log.debug(s"Trying to recover consumer for [${factory.id}] with destination [$dest]")
-        con <- connect(factory, clientId)
-        _   <- createSession(con).use(jmsSess => createConsumer(jmsSess, dest).use(c => consumeUntilException(c)))
+        _      <- log.debug(s"Trying to recover consumer for [${factory.id}] with destination [$dest]")
+        conMgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+        con    <- conMgr.connect(factory, clientId)
+        _      <- createSession(con).use(jmsSess => createConsumer(jmsSess, dest).use(c => consumeUntilException(c)))
       } yield ()
 
       part.catchAll { _ =>

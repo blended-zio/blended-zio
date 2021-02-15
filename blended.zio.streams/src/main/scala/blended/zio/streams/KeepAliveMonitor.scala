@@ -53,7 +53,7 @@ trait KeepAliveMonitor {
    * missed keep alives, run will terminate and yield the current counter (which happens to
    * be the allowed maximum).
    */
-  def run(interval: Duration): ZIO[Clock with Logging, Nothing, Unit]
+  def run(interval: Duration): ZIO[Clock with Logging, Nothing, Int]
 
   /**
    * Return the current count of missed keep alives
@@ -67,17 +67,17 @@ object DefaultKeepAliveMonitor {
   def make(
     name: String,
     allowedKeepAlives: Int
-  ): ZIO[Any, Nothing, KeepAliveMonitor] = for {
+  ) = for {
     init <- Ref.make[Int](0)
     impl  = new DefaultKeepAliveMonitor(name, allowedKeepAlives) {
               override private[streams] val missed: Ref[Int] = init
             }
     kam   = new KeepAliveMonitor {
-              override val id: String                                                      = name
-              override val allowed: Int                                                    = allowedKeepAlives
-              override def alive: ZIO[Logging, Nothing, Unit]                              = impl.alive
-              override def run(interval: Duration): ZIO[Clock with Logging, Nothing, Unit] = impl.run(interval)
-              override def current: ZIO[Any, Nothing, Int]                                 = impl.current
+              override val id: String                                                     = name
+              override val allowed: Int                                                   = allowedKeepAlives
+              override def alive: ZIO[Logging, Nothing, Unit]                             = impl.alive
+              override def run(interval: Duration): ZIO[Clock with Logging, Nothing, Int] = impl.run(interval)
+              override def current: ZIO[Any, Nothing, Int]                                = impl.current
             }
   } yield kam
 }
@@ -89,15 +89,15 @@ sealed abstract private class DefaultKeepAliveMonitor private (
 
   private[streams] val missed: Ref[Int]
 
-  private def alive: ZIO[Logging, Nothing, Unit] = for {
+  private def alive = for {
     _ <- log.trace(s"Reset keep alive monitor [$name]")
     _ <- missed.set(0)
   } yield ()
 
-  private[streams] def current: ZIO[Any, Nothing, Int] = missed.get
+  private[streams] def current = missed.get
 
   // doctag<run>
-  private[streams] def run(interval: Duration): ZIO[Clock with Logging, Nothing, Unit] = {
+  private[streams] def run(interval: Duration) = {
 
     def go: ZIO[Clock, Nothing, Unit] = ZIO.ifM(missed.updateAndGet(_ + 1).map(_ == allowedKeepAlives))(
       ZIO.unit,
@@ -109,7 +109,7 @@ sealed abstract private class DefaultKeepAliveMonitor private (
       _ <- go.schedule(Schedule.duration(interval))
       c <- missed.get
       _ <- log.trace(s"KeepAliveMonitor [$name] finished with maximum keep alives of [$c]")
-    } yield ()
+    } yield (c)
   }
   // end:doctag<run>
 }

@@ -15,7 +15,7 @@ package object jms {
   def connect(
     cf: JmsConnectionFactory,
     clientId: String
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, JmsConnection] = for {
+  ) = for {
     mgr <- ZIO.service[ZIOJmsConnectionManager.Service]
     con <- mgr.connect(cf, clientId)
   } yield con
@@ -23,26 +23,10 @@ package object jms {
   def reconnect(
     con: JmsConnection,
     cause: Option[Throwable]
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, Unit] = for {
+  ) = for {
     mgr <- ZIO.service[ZIOJmsConnectionManager.Service]
     _   <- mgr.reconnect(con, cause)
   } yield ()
-
-  /**
-   * Create a connection with an effect executed whenever the underlying JMS connection is (re)created
-   */
-  def monitoredConnect(
-    clientId: String,
-    cf: JmsConnectionFactory
-  )(
-    onConnect: JmsConnection => ZIO[ZEnv with Logging with ZIOJmsConnectionManager, Nothing, Unit]
-  ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, JmsConnection] = for {
-    con <- connect(cf, clientId)
-    _   <- for {
-             f <- onConnect(con).fork
-             _ <- f.join
-           } yield ()
-  } yield con
 
   def createSession(con: JmsConnection) = ZManaged.make((for {
     js <- effectBlocking(

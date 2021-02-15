@@ -7,7 +7,6 @@ import zio._
 import zio.console._
 import zio.clock._
 import zio.duration._
-import zio.logging._
 import zio.logging.slf4j._
 
 import blended.zio.activemq.AMQBroker
@@ -16,37 +15,33 @@ import blended.zio.streams.jms._
 import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
 
-object RecoveringJmsApp extends App {
+object KeepAliveDemoApp extends App {
 
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
-  private val logEnv: ZLayer[Any, Nothing, ZEnv with Logging] =
-    ZEnv.live ++ Slf4jLogger.make((_, message) => message)
+  private val logEnv    = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
+  private val brokerEnv = logEnv >>> AMQBroker.simple("simple")
+  private val mgrEnv    = ZIOJmsConnectionManager.Service.make
 
-  private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
-    logEnv >>> AMQBroker.simple("simple")
-
-  private val mgrEnv = ZIOJmsConnectionManager.Service.make
-
-  private val combinedEnv =
-    logEnv ++ brokerEnv ++ mgrEnv
+  private val combinedEnv = logEnv ++ brokerEnv ++ mgrEnv
 
   // doctag<stream>
   private val stream: ZStream[ZEnv, Nothing, String] = ZStream
-    .fromSchedule(Schedule.spaced(1000.millis).jittered)
+    .fromSchedule(Schedule.spaced(10.seconds).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
     )
   // end:doctag<stream>
 
-  private val amqCF: JmsConnectionFactory =
-    JmsConnectionFactory(
-      "amq:amq",
-      new ActiveMQConnectionFactory("vm://simple?create=false"),
-      3.seconds,
-      None
-    )
+  // doctag<factory>
+  private def amqCF: JmsConnectionFactory = JmsConnectionFactory(
+    "amq:amq",
+    new ActiveMQConnectionFactory("vm://simple?create=false"),
+    3.seconds,
+    Some(JmsKeepAliveMonitor(JmsQueue("keepAlive"), 1.second, 3))
+  )
+  // end:doctag<factory>
 
   private val clientId: String         = "sampleApp"
   private val testDest: JmsDestination = JmsQueue("sample")
@@ -54,27 +49,18 @@ object RecoveringJmsApp extends App {
   // doctag<program>
   private val program = for {
     _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
-    mgr       <- ZIO.service[ZIOJmsConnectionManager.Service]
-    f         <- ZIO.unit.schedule(Schedule.duration(30.seconds)).fork
-    _         <- mgr
-                   .reconnect(
-                     amqCF.connId(clientId),
-                     Some(new Exception("Boom"))
-                   )
-                   .schedule(Schedule.duration(10.seconds))
-                   .fork
+    f         <- ZIO.unit.schedule(Schedule.duration(30.minutes)).fork
     jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
     jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
     consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
     producer  <- stream.run(jmsSink).fork
     _         <- f.join >>> consumer.interrupt >>> producer.interrupt
   } yield ()
-
   // end:doctag<program>
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = program
-    .provideCustomLayer(combinedEnv)
-    .catchAllCause(c => putStrLn(c.prettyPrint))
-    .exitCode
-
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
+    program
+      .provideCustomLayer(combinedEnv)
+      .catchAllCause(c => putStrLn(c.prettyPrint))
+      .exitCode
 }
