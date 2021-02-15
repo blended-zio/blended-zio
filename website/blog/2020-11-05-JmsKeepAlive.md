@@ -58,7 +58,6 @@ With the JMS based streams explained [here](2020-10-27-ZIOJms.md) and the genera
 
 From the API perspective we want to create a stream that regularly creates messages and run that with a JMS sink - effectively sending the messages to the JMS broker.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/JmsKeepAliveMonitor.scala" doctag="sender"
 
 :::caution
 Keep in mind that the library has prototyping character for now, so some elements like the ping message format are hard coded for the time being and need to be fleshed out later on.
@@ -68,7 +67,6 @@ Keep in mind that the library has prototyping character for now, so some element
 
 Now we need to define a consumer - in other words a ZIO stream - and for each message received we want to execute `alive` on a given `KeepAliveMonitor`.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/JmsKeepAliveMonitor.scala" doctag="receiver"
 
 ### Create the JMS Keep Alive Monitor
 
@@ -83,7 +81,6 @@ With those parameters the JMS keep alive monitor is straight forward:
 1. Once run terminates, interrupt the stream and sink
 1. Terminate with the current count of the underlying monitor
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/JmsKeepAliveMonitor.scala" doctag="run"
 
 ## Instrumenting a JMS connection with a keep alive monitor
 

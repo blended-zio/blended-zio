@@ -6,7 +6,7 @@ Functionality that is required by all _blended_ containers.
 
 ## Configuring Blended Containers
 
-As outlined [here]({{< relref "/docs/blended_container.md" >}}) all modules that require configuration should be able to use external configuration files containing place holders to specify lookups from environment variables or resolve encrypted values.
+As outlined [here](../container.md) all modules that require configuration should be able to use external configuration files containing place holders to specify lookups from environment variables or resolve encrypted values.
 
 For example, the configuration for an LDAP service might be:
 

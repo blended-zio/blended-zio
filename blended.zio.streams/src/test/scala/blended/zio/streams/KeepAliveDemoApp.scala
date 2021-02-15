@@ -49,7 +49,7 @@ object KeepAliveDemoApp extends App {
   // doctag<program>
   private val program = for {
     _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
-    f         <- ZIO.unit.schedule(Schedule.duration(30.minutes)).fork
+    f         <- ZIO.unit.schedule(Schedule.duration(1.minutes)).fork
     jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
     jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
     consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
