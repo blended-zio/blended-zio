@@ -76,7 +76,7 @@ module.exports = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Way of Quality GmbH - Built with Docusaurus v2.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Way of Quality GmbH - Built with <a href="https://v2.docusaurus.io/">Docusaurus v2</a>`,
     },
   },
   // doctag<configure>
