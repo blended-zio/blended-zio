@@ -37,11 +37,15 @@ module.exports = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'About',
           items: [
             {
-              label: 'Get Started',
-              to: 'docs/',
+              label: 'Andreas Gies',
+              to: 'docs/andreas',
+            },
+            {
+              label: 'Legal',
+              to: 'docs/legal',
             },
           ],
         },
