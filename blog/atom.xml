@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://blended-zio.github.io/blended-zio/blog</id>
     <title>Blended ZIO Blog</title>
-    <updated>2021-02-09T00:00:00.000Z</updated>
+    <updated>2021-02-15T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://blended-zio.github.io/blended-zio/blog"/>
     <subtitle>Blended ZIO Blog</subtitle>
     <icon>https://blended-zio.github.io/blended-zio/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Documentation Helpers]]></title>
+        <id>doc-helpers</id>
+        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/doc-helpers"/>
+        <updated>2021-02-15T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Blended ZIO uses Docusaurus 2 as a generator to produce the static web site from markdown documents. This blog post shows some add-ons we are using to increase the quality of our web site.]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Integration Testing]]></title>
         <id>integration-testing</id>

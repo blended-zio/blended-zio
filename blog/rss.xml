@@ -4,9 +4,16 @@
         <title>Blended ZIO Blog</title>
         <link>https://blended-zio.github.io/blended-zio/blog</link>
         <description>Blended ZIO Blog</description>
-        <lastBuildDate>Tue, 09 Feb 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 15 Feb 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[Documentation Helpers]]></title>
+            <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/doc-helpers</link>
+            <guid>doc-helpers</guid>
+            <pubDate>Mon, 15 Feb 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[Blended ZIO uses Docusaurus 2 as a generator to produce the static web site from markdown documents. This blog post shows some add-ons we are using to increase the quality of our web site.]]></description>
+        </item>
         <item>
             <title><![CDATA[Integration Testing]]></title>
             <link>https://blended-zio.github.io/blended-zio/blended-zio/blog/integration-testing</link>

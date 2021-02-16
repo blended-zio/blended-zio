@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[51],{118:function(s){s.exports=JSON.parse('{"allTagsPath":"/blended-zio/blog/tags","slug":"docusaurus-2","name":"docusaurus 2","count":1,"permalink":"/blended-zio/blog/tags/docusaurus-2"}')}}]);

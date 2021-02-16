@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[33],{101:function(a){a.exports=JSON.parse('{"allTagsPath":"/blended-zio/blog/tags","slug":"remark","name":"remark","count":1,"permalink":"/blended-zio/blog/tags/remark"}')}}]);
