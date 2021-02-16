@@ -5,7 +5,7 @@ title: Andreas Gies short Bio
 
 ## Studies
 
-Born in 1968 and was fascinated with IT from an early age. I was lucky to get a place at the [University of the German Forces in Munich](https://www.unibw.de/) to study computer science from 1987-1990. Throughout my studies I came in contact with [ML](https://en.wikipedia.org/wiki/ML_(programming_language)), an earlier functional programming language. Even though I really liked the language and the concepts I came to realize that in the IT workplace of the 90's functional programming didn't exist.
+Born in 1968 I was fascinated with IT from an early age. I was lucky to get a place at the [University of the German Forces in Munich](https://www.unibw.de/) to study computer science from 1987-1990. Throughout my studies I came in contact with [ML](https://en.wikipedia.org/wiki/ML_(programming_language)), an earlier functional programming language. Even though I really liked the language and the concepts I came to realize that in the IT workplace of the 90's functional programming didn't exist.
 
 ## Air force
 Leaving university I was happy to spend the rest of my air force time as a software developer and project lead for several projects where I learned to love and hate mainframe technologies and got in touch with middleware components such as MQ Series and DB/2 on the mainframe. The languages of those days were PL/I, COBOL and (beware!) assembler.
