@@ -50,9 +50,9 @@ Here is an excerpt from the console output:
 
 ## A reconnecting wrapper around the JMS Connection factory
 
-Under the covers we use a connection factory that lifts all JMS related calls to ZIO effects. Further, an established connection will be reused as much as possible - effectively limiting the number of connections per connection factory to at most 1.
+Under the covers we use a connection manager which manages named JMS connections and at the moment it guarantees that for a given id only a single physical JMS connections will be established. Under the covers the connection manager delegates all JMS API calls to the methods of `ConnectionFactory` within the JMS API. 
 
-To achieve this, we wrap the connect method into a Semaphore and return the connection if it already exists, otherwise we create a new connection and store it.
+To guarantee that only a single connection can be established, we wrap the actual connect with a Semaphore and return the connection if it already exists, otherwise we create a new connection and store it.
 
 CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="connect"
 
@@ -70,9 +70,9 @@ The idea behind the recovering stream is that we connect to the JMS broker with 
 
 CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/RecoveringJmsStream.scala" doctag="stream"
 
-The idea manifests in `consumeUntilException` and `consumeForEver`. `consumeUntilException` uses the stream we have seen in the last [article]({{< relref "/posts/2020-10-27-ZIOJms.md#receiving-messages" >}}). It will stick all messages that have been received into a one element buffer which we can use later on to create the final stream visible to the outside world.
+The idea manifests in `consumeUntilException` and `consumeForEver`. `consumeUntilException` uses the stream we have seen in the last [article](2020-10-27-ZIOJms.md#receiving-messages). It will stick all messages that have been received into a one element buffer which we can use later on to create the final stream visible to the outside world.
 
-`consumeForever` simply creates an effect which will cerate the JMS connection and then delegate to `consumeUntilException`. The we apply the `catchAll` operator to that effect where we schedule the next iteration to `consumeForEver` after a recovery period.
+`consumeForever` simply creates an effect which will create the JMS connection and then delegate to `consumeUntilException`. The we apply the `catchAll` operator to that effect where we schedule the next iteration to `consumeForEver` after a recovery period.
 
 The final stream is then created from repeating the `take` operation of the buffer while `consumerForEver` is executing in it's own fiber.
 

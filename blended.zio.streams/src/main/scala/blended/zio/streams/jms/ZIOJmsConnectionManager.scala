@@ -201,6 +201,7 @@ object ZIOJmsConnectionManager {
           }
           // end:doctag<receiver>
 
+          // doctag<monitor>
           val run = for {
             kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed)
             send <- startKeepAliveSender.fork
@@ -214,8 +215,10 @@ object ZIOJmsConnectionManager {
             _ <- log.debug(s"Adding keep Alive to $con")
             _ <- run.flatMap(missed => reconnect(con, Some(new KeepAliveException(con.id, missed)))).forkDaemon
           } yield ()
+          // end:doctag<monitor>
         }
 
+        // doctag<jmsconnect>
         for {
           _  <- log.debug(s"Connecting to [${cf.id}] with clientId [$clientId]")
           jc <- effectBlocking {
@@ -229,10 +232,11 @@ object ZIOJmsConnectionManager {
                   } yield t
                 }.refineOrDie { case t: JMSException => t }
           c   = JmsConnection(cf, jc, clientId)
-          _  <- addConnection(c)
           _  <- ZIO.foreach(cf.keepAlive)(ka => addKeepAlive(c, ka))
+          _  <- addConnection(c)
           _  <- log.debug(s"Created [$c]")
         } yield c
+        // end:doctag<jmsconnect>
       }
 
       private[jms] def close(c: JmsConnection) = (ZIO.uninterruptible {

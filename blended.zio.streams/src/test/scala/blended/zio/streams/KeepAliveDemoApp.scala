@@ -35,7 +35,7 @@ object KeepAliveDemoApp extends App {
   // end:doctag<stream>
 
   // doctag<factory>
-  private def amqCF: JmsConnectionFactory = JmsConnectionFactory(
+  private def amqCF = JmsConnectionFactory(
     "amq:amq",
     new ActiveMQConnectionFactory("vm://simple?create=false"),
     3.seconds,

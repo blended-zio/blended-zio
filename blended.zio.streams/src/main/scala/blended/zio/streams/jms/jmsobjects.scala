@@ -17,11 +17,13 @@ object JmsApiObject {
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss:SSS")
 }
 
+// doctag<keepalive>
 final case class JmsKeepAliveMonitor(
   dest: JmsDestination,
   interval: Duration,
   allowed: Int
 )
+// end:doctag<keepalive>
 
 // doctag<connection>
 final case class JmsConnectionFactory(
