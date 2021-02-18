@@ -1,12 +1,12 @@
 ---
-slug: zio-jms-keepalive
+slug: zio-jms-keep-alive
 title: Keep alive for JMS connections
 tags: [ZIO, Streams, JMS]
 author: Andreas Gies
 author_url: https://github.com/atooni
 ---
 
-This article concludes the mini series exploring the ZIO Stream API and shows how a simple keepalive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required. 
+This article concludes the mini series exploring the ZIO Stream API and shows how a simple keep-alive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required. 
 
 <!-- truncate -->
 
@@ -41,24 +41,24 @@ A keep alive monitor is more or less a counter that is increased at certain inte
 the counter reaches a defined value `n` that practically means that for the duration of `n * interval` the monitor hasn't received a signal. The monitor as such does
 not need to know about the entity it monitors, in our case the JMS connection.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/KeepAliveMonitor.scala" doctag="trait"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/KeepAliveMonitor.scala) doctag="trait"
 
 The implementation for this interface is fairly straight forward. Within the `run` method we execute a step effect, which simply increases the internal
 counter. If the counter has reached the given maximum, the step function terminates, otherwise the next step is scheduled after the given interval.
 
 Overall, `run` will terminate once the given max count has been reached. Therefore it is always a good idea fo users of the monitor to execute `monitor.run` in it's own fiber.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/KeepAliveMonitor.scala" doctag="run"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/KeepAliveMonitor.scala) doctag="run"
 
 ## Using the Keep alive monitor with JMS connections
 
 With the JMS based streams explained [here](2020-10-27-ZIOJms.md) and the general keep alive monitor we can now build a monitor that determines whether a given JMS connection is healthy. We do that by using the connection to be monitored to regularly send and receive messages. Whenever a message is received, we execute `alive` on the underlying monitor - effectively resetting the counter.
 
-### Definining a JMS Keep alive 
+### Defining a JMS Keep alive 
 
 From the API perspective we want to describe a `JmsKeepAliveMonitor` without actually executing it. That is fairly straightforward as we just need to know the JMS destination we want to use for our keep alive messages, the interval to send messages and finally the maximum number of intervals we would accept not receiving a keep alive message. 
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/jmsobjects.scala" doctag="keepalive"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/jms/jmsobjects.scala) doctag="keepalive"
 
 
 :::caution
@@ -69,11 +69,11 @@ Keep in mind that the library has prototyping character for now, so some element
 
 First of all, we will create a stream to produce Keep Alive messages 
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="sender"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala) doctag="sender"
 
 Now we need to define a consumer - in other words a ZIO stream - and for each message received we want to execute `alive` on a given `KeepAliveMonitor`.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="receiver"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala) doctag="receiver"
 
 ### Create the JMS Keep Alive Monitor
 
@@ -88,23 +88,23 @@ With those parameters the JMS keep alive monitor is straight forward:
 1. Once run terminates, interrupt the stream and sink
 1. Terminate with the current count of the underlying monitor
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="monitor"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala) doctag="monitor"
 
 Putting all our effects together, we can now use the `JmsConnectionFactory` and and the `JmsKeepAlive`in our data model to create an instrument a JMS connection:
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala" doctag="jmsconnect"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/main/scala/blended/zio/streams/jms/ZIOJmsConnectionManager.scala) doctag="jmsconnect"
 
 ## Instrumenting a JMS connection with a keep alive monitor
 
-From the API perspective we configure the keep as an `Option[JmsKeepAliveMonitor]` within the `JmsConnectionFactory`. If the field is defined, the underlying connection manager will instiate a keep alive stream for each connection that is created from that connection factory. 
+From the API perspective we configure the keep as an `Option[JmsKeepAliveMonitor]` within the `JmsConnectionFactory`. If the field is defined, the underlying connection manager will instantiate a keep alive stream for each connection that is created from that connection factory. 
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala" doctag="factory"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala) doctag="factory"
 
 ## The program to be run
 
 In the program we have to use the recovering streams we have seen in the last [article](2020-10-30-RecoveringStreams.md), so that an automated recovery can happen if the keep alive counter exceeds and subsequently the connection is closed and restarted. 
 
-CODE_INCLUDE lang="scala" file="../blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala" doctag="program"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.streams/src/test/scala/blended/zio/streams/KeepAliveDemoApp.scala) doctag="program"
 
 ## Conclusion
 

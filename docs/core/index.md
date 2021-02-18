@@ -29,7 +29,7 @@ Following the [advice](https://discord.com/channels/629491597070827530/633028431
 
 CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/config/LazyConfigString.scala" doctag="descriptor" title="Descriptor"
 
-Essentially we define a class `LazyConfigString`, which instances will eventually hold the resolved config value. Making the class `sealed` and `abstract` ensures that new instances can only bo created from within the companion object.
+Essentially we define a class `LazyConfigString`, which instances will eventually hold the resolved config value. Making the class `sealed` and `abstract` ensures that new instances can only be created from within the companion object.
 
 Within the companion object the case class `Raw` can be instantiated with Strings read from the config sources. Also, within this class the `evaluate` method holds the effect describing the resolution of the raw config string to a real value. Essentially we are deferring the resolution to a `StringEvaluator` service.
 
