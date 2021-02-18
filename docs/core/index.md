@@ -51,14 +51,14 @@ With the code above, zio-config will generate the following report in markdown f
 
 |FieldName     |Format   |Description                                                          |Sources|
 |---           |---      |---                                                                  |---    |
-|url           |primitive|lazyly evaluated config string, The url to connect to the LDAP server|       |
-|systemUser    |primitive|lazyly evaluated config string                                       |       |
-|systemPassword|primitive|lazyly evaluated config string                                       |       |
-|userBase      |primitive|lazyly evaluated config string                                       |       |
-|userAttribute |primitive|lazyly evaluated config string                                       |       |
-|groupBase     |primitive|lazyly evaluated config string                                       |       |
-|groupAttribute|primitive|lazyly evaluated config string                                       |       |
-|groupSearch   |primitive|lazyly evaluated config string                                       |       |
+|url           |primitive|lazily evaluated config string, The url to connect to the LDAP server|       |
+|systemUser    |primitive|lazily evaluated config string                                       |       |
+|systemPassword|primitive|lazily evaluated config string                                       |       |
+|userBase      |primitive|lazily evaluated config string                                       |       |
+|userAttribute |primitive|lazily evaluated config string                                       |       |
+|groupBase     |primitive|lazily evaluated config string                                       |       |
+|groupAttribute|primitive|lazily evaluated config string                                       |       |
+|groupSearch   |primitive|lazily evaluated config string                                       |       |
 :::
 
 ## Evaluate simple string expressions
