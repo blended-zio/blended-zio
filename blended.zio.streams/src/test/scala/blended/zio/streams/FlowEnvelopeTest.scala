@@ -45,14 +45,15 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
   }
 
   private val zip = test("allow to zip 2 envelopes") {
+
+    import MsgProperty._
+
     val s = "Hello Andreas"
 
     val env1 = FlowEnvelope.make(s).addHeader("foo" -> "bar")
     val env2 = FlowEnvelope.make(7).addHeader("prop" -> 45)
 
     val env = env1.zip(env2)
-
-    println(env.meta.get[FlowEnvelope.EnvelopeHeader].mkString(","))
 
     val lookup1 = env.header[String]("foo")
     val lookup2 = env.header[Int]("prop")
