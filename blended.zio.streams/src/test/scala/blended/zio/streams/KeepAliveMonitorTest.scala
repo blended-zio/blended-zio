@@ -17,7 +17,7 @@ object KeepAliveMonitorTest extends DefaultRunnableSpec {
   private val logEnv: ZLayer[Any, Nothing, ZEnv with Logging] =
     ZEnv.live ++ Slf4jLogger.make((_, message) => message)
 
-  override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = (suite("The KeepAliveMonitor should")(
+  override def spec = (suite("The KeepAliveMonitor should")(
     signalKeepAlive,
     keepAlive
   ).provideCustomLayer(logEnv)) @@ timed @@ timeout(3.seconds) @@ parallel
