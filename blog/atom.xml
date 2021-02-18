@@ -23,13 +23,13 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[Keep alive for JMS connections]]></title>
-        <id>zio-jms-keepalive</id>
-        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-jms-keepalive"/>
+        <id>zio-jms-keep-alive</id>
+        <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-jms-keep-alive"/>
         <updated>2020-11-05T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[This article concludes the mini series exploring the ZIO Stream API and shows how a simple keepalive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required.]]></summary>
+        <summary type="html"><![CDATA[This article concludes the mini series exploring the ZIO Stream API and shows how a simple keep-alive mechanism can be added to a JMS based stream. This will check the health of the underlying JMS connection and issue a connection restart if required.]]></summary>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Autorecovery for (JMS) Streams]]></title>
+        <title type="html"><![CDATA[Recovery for (JMS) Streams]]></title>
         <id>zio-streams-autorecover</id>
         <link href="https://blended-zio.github.io/blended-zio/blended-zio/blog/zio-streams-autorecover"/>
         <updated>2020-10-30T00:00:00.000Z</updated>
