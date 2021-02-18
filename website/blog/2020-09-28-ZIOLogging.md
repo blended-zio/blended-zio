@@ -20,11 +20,11 @@ Within _Blended ZIO_ the services are kept clean of non functional requirements 
 
 For example, the `Service` within `MBeanServerFacade` is defined as follows.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="service" title="Service Definition"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala) doctag="service" title="Service Definition"
 
 However, within the service's implementation `JvmMBeanServerFacade` the corresponding methods leverage the API of [zio-logging](https://zio.github.io/zio-logging/) to produce some output while executing the effects.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="info" title="Sample implementation"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala) doctag="info" title="Sample implementation"
 
 So, when we assemble the service
 
@@ -34,10 +34,10 @@ So, when we assemble the service
 
 The code to construct the live service which requires `Logging` leverages `ZLayer.fromFunction`. We see that a `Logging` service is required within the environment and we can use the parameter to the `fromFunction` call in the `provide` operator so that the requirement of having a `Logging` service is eliminated and the sole business service interface remains.
 
-CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala" doctag="zlayer" title="Layer definition"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.jmx/src/main/scala/blended/zio/jmx/MBeanServerFacade.scala) doctag="zlayer" title="Layer definition"
 
 We might have other service implementations that do not require logging or use a different logging API while keeping the same business interface.
 
-Finally, we can construct the environment for our program as we do in the testcase:
+Finally, we can construct the environment for our program as we do in the test case:
 
-CODE_INCLUDE lang="scala" file="../blended.zio.jmx/src/test/scala/blended/zio/jmx/MBeanServerTest.scala" doctag="zlayer" title="Layer creation"
+CODE_INCLUDE lang="scala" [src](https://raw.githubusercontent.com/blended-zio/blended-zio/1b304fb16f9312c590207d2cec92f2a81ace3656/blended.zio.jmx/src/test/scala/blended/zio/jmx/MBeanServerTest.scala) doctag="zlayer" title="Layer creation"

@@ -29,7 +29,7 @@ Following the [advice](https://discord.com/channels/629491597070827530/633028431
 
 CODE_INCLUDE lang="scala" file="../blended.zio.core/src/main/scala/blended/zio/core/config/LazyConfigString.scala" doctag="descriptor" title="Descriptor"
 
-Essentially we define a class `LazyConfigString`, which instances will eventually hold the resolved config value. Making the class `sealed` and `abstract` ensures that new instances can only bo created from within the companion object.
+Essentially we define a class `LazyConfigString`, which instances will eventually hold the resolved config value. Making the class `sealed` and `abstract` ensures that new instances can only be created from within the companion object.
 
 Within the companion object the case class `Raw` can be instantiated with Strings read from the config sources. Also, within this class the `evaluate` method holds the effect describing the resolution of the raw config string to a real value. Essentially we are deferring the resolution to a `StringEvaluator` service.
 
@@ -51,14 +51,14 @@ With the code above, zio-config will generate the following report in markdown f
 
 |FieldName     |Format   |Description                                                          |Sources|
 |---           |---      |---                                                                  |---    |
-|url           |primitive|lazyly evaluated config string, The url to connect to the LDAP server|       |
-|systemUser    |primitive|lazyly evaluated config string                                       |       |
-|systemPassword|primitive|lazyly evaluated config string                                       |       |
-|userBase      |primitive|lazyly evaluated config string                                       |       |
-|userAttribute |primitive|lazyly evaluated config string                                       |       |
-|groupBase     |primitive|lazyly evaluated config string                                       |       |
-|groupAttribute|primitive|lazyly evaluated config string                                       |       |
-|groupSearch   |primitive|lazyly evaluated config string                                       |       |
+|url           |primitive|lazily evaluated config string, The url to connect to the LDAP server|       |
+|systemUser    |primitive|lazily evaluated config string                                       |       |
+|systemPassword|primitive|lazily evaluated config string                                       |       |
+|userBase      |primitive|lazily evaluated config string                                       |       |
+|userAttribute |primitive|lazily evaluated config string                                       |       |
+|groupBase     |primitive|lazily evaluated config string                                       |       |
+|groupAttribute|primitive|lazily evaluated config string                                       |       |
+|groupSearch   |primitive|lazily evaluated config string                                       |       |
 :::
 
 ## Evaluate simple string expressions

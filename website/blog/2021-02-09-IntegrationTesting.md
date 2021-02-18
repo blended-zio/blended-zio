@@ -31,14 +31,14 @@ architectures likewise.
 
 :::note
 Consider a retail company operating stores internationally with an international headquarter. The central nodes in that case 
-would provide the interface to the headquarter's backend systems, while each store would at least run an instance of a POS 
+would provide the interface to the headquarters backend systems, while each store would at least run an instance of a POS 
 (Point of Sales) system. The POS might be the same across all stores, in which case we would have only one application type. 
 
-Caused by mergers and aquisitions the POS systems in individual countries could be different and we would have one application 
+Caused by mergers and acquisitions the POS systems in individual countries could be different and we would have one application 
 type per POS system installed in the stores. 
 
 A real world application would have many more business cases than just the POS system, but in principle data must be pushed from
-the data center to the satellites and data must be collected within the satellites and pushed to the datacenter.
+the data center to the satellites and data must be collected within the satellites and pushed to the data center.
 :::
 
 ## Different levels of testing 
@@ -51,16 +51,16 @@ In this article we won't go into all the details how tests are implemented, but 
 will encounter at this level. 
 
 As the name suggests, a Unit Test should have a minimal set of dependencies to other components and also minimal requirements for it's 
-runtime. At this level we might apply either blackbox or whitebox testing. 
+runtime. At this level we might apply either black box or white box testing. 
 
-A blackbox test is implemented against a given API of a component. For example, a queue datastructure should implement the FIFO principle
+A black box test is implemented against a given API of a component. For example, a queue data structure should implement the FIFO principle
 regardless of it's implementation.
 
-On the other hand, a whitebox test of the queue would make assertions about the inner state of the data structure and would require 
+On the other hand, a white box test of the queue would make assertions about the inner state of the data structure and would require 
 knowledge about the specific implementation. 
 
-In most cases blackbox tests should be more robust in cases the underlying implementation changes as they should still work unless the 
-API has changed as well. ZIO Test includes the necessary tools to create Property based tests that help us to verify the exepected 
+In most cases black box tests should be more robust in cases the underlying implementation changes as they should still work unless the 
+API has changed as well. ZIO Test includes the necessary tools to create Property based tests that help us to verify the expected 
 behavior of the API using powerful data generators.
 
 :::note 
@@ -68,8 +68,8 @@ Sometimes this is a very fine line to walk.  For example, a component that sends
 might need to spin up an ad hoc instance of the middleware component or a test server to talk to. Some articles will argue that involving 
 any external component already belongs in the realm of integration tests.
 
-For a unit test we would prefer an adhoc instance as that makes it easier to provide deterministic pre-conditions. As a general rule, for 
-a unit test we would aim for the least complicated setup without compromising how meaningfull the test is. 
+For a unit test we would prefer an ad hoc instance as that makes it easier to provide deterministic pre-conditions. As a general rule, for 
+a unit test we would aim for the least complicated setup without compromising how meaningful the test is. 
 :::
 
 The focal point of our unit test suite is to proof the correctness of our code on the component level. One of the metrics used to evaluate 
@@ -100,7 +100,7 @@ The integration tests are now targeting several main areas:
    using the component with the correctly configured destination name. 
 
    This is just an example - ideally we would have had the requirement from the beginning, but more subtle parameters that we considered to be 
-   constant values might pop up and again we would make them configurable and ideally verify the components obeyance to the configuration with 
+   constant values might pop up and again we would make them configurable and ideally verify the components compliance to the configuration with 
    a unit test.
 
 1. The components collaborate with each other according to the applications design. 
@@ -125,7 +125,7 @@ The integration tests are now targeting several main areas:
    Now we can think about the message router within it's larger context. A store server might use an inbound messaging bridge to consume messages from external 
    systems and forward the messages coming in over the bridge to an internal channel where the message router is configured as a listener. 
 
-   In terms of test cases we can still use the same set of tests, but with different channels. Instead of sending messages to the inbaund channel 
+   In terms of test cases we can still use the same set of tests, but with different channels. Instead of sending messages to the inbound channel 
    of the message router directly we would send them to an appropriate channel on the central messaging middleware.
 
 To measure the completeness of our integration test suite the code coverage is not suitable. Instead, we would be interested to cover as many business cases 
@@ -134,7 +134,7 @@ as possible.
 __Looking at the integration tests we can capture these requirements:__
 
 - For CI/CD we want to create a minimal, self contained environment in the form of a collection of docker images providing enough functionality to 
-  execute our test suite and spin up a set of collaborting docker containers as the the _system under test_.
+  execute our test suite and spin up a set of collaborating docker containers as the the _system under test_.
 
 - For CI/CD we want to determine the required __TestChannels__ from the started containers.
 
@@ -155,13 +155,13 @@ with a slightly different focus. The main difference is that the _system under t
 tests. If we stick to our mental model of a satellite architecture we want to increase the number of satellites, which must also be reflected in 
 our test execution by instantiating tests for all participating satellites.
 
-Also, we do not make the termination of test suite mandatory at this level of testing. Instead, the test executor would continously select a runnable 
+Also, we do not make the termination of test suite mandatory at this level of testing. Instead, the test executor would continuously select a runnable 
 test template, instantiate and execute it. In that case the test executor would produce a stream of test results, which would update statistics for the 
 executed tests. 
 
 Areas of interest at this level might be:
 
-- The ratio of failed / successfull tests for each test template. 
+- The ratio of failed / successful tests for each test template. 
 - Response times 
 - Resource consumption such as disk space, memory and threads
 - Discovery of resource leaks 
@@ -176,9 +176,9 @@ __We can list the basic requirements for the test framework at this level:__
 
 - Use the configured environment to determine the required __TestChannels__ and provide the __TestEnvironment__.
 
-- Use a __TestExecutor__ to continously select a _runnable_ __TestTemplate__, create and execute a __TestInstance__ and capture the __TestResult__
+- Use a __TestExecutor__ to continuously select a _runnable_ __TestTemplate__, create and execute a __TestInstance__ and capture the __TestResult__
 
-- We want to capture all __TestResults__ to build accumulated statistics which can be reported to suitable visualization backends such as Prometheus 
+- We want to capture all __TestResults__ to build accumulated statistics which can be reported to suitable visualization back ends such as Prometheus 
   or Datadog. 
 
 - Potentially define alerts on the cumulated statistics, for example "The average response time exceeds x milliseconds"
@@ -193,7 +193,7 @@ A test channel could be a channel within a message oriented middleware, it could
 mechanism. 
 
 #### Test Environment
-A test environment is a collection of addreessable _Test Channels_. A test environment is the main component for abstracting the _system under test_ to be used 
+A test environment is a collection of addressable _Test Channels_. A test environment is the main component for abstracting the _system under test_ to be used 
 by the test executor. 
 
 #### Test Template 
@@ -227,5 +227,5 @@ There are some requirements that are kind of implicit from the requirements capt
 - [ScalaTest](https://scalatest.org)
 - [ZIO Test](https://zio.dev/docs/usecases/usecases_testing)
 - [Testcontainers](https://www.testcontainers.org/)
-- [Izumi distage testkit](https://izumi.7mind.io/distage/distage-testkit.html)
+- [Izumi distage test kit](https://izumi.7mind.io/distage/distage-testkit.html)
 

@@ -66,12 +66,12 @@ module.exports = {
           title: 'More',
           items: [
             {
-              label: 'Blog',
-              to: 'blog',
+              label: 'Atom',
+              to: 'blog/atom.xml',
             },
             {
-              label: 'GitHub',
-              href: 'https://github.com/blended-zio/blended-zio',
+              label: 'RSS',
+              to: 'blog/rss.xml',
             },
           ],
         },
