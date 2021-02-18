@@ -31,4 +31,4 @@ class UnresolvedVariableException(
 class UnknownModifierException(
   val line: String,
   val modName: String
-) extends EvaluatorException(s"Unknown modifier [$modName] refrenced in [$line]")
+) extends EvaluatorException(s"Unknown modifier [$modName] referenced in [$line]")
