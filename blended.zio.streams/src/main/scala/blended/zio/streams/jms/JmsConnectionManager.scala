@@ -13,16 +13,16 @@ import blended.zio.streams.{ KeepAliveMonitor, DefaultKeepAliveMonitor }
 import java.text.SimpleDateFormat
 import blended.zio.streams.KeepAliveException
 
-object ZIOJmsConnectionManager {
+object JmsConnectionManager {
 
-  type ZIOJmsConnectionManager = Has[Service]
+  type JmsConnectionManagerService = Has[Service]
 
   trait Service {
     // Create a connection for a given Connection Factory with a given client id.
     def connect(
       cf: JmsConnectionFactory,
       clientId: String
-    ): ZIO[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, JmsConnection]
+    ): ZIO[ZEnv with Logging with JmsConnectionManagerService, JMSException, JmsConnection]
     // Reconnect a given connection with an optional cause
     def reconnect(con: JmsConnection, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
     def reconnect(id: String, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
@@ -34,7 +34,7 @@ object ZIOJmsConnectionManager {
 
   object Service {
 
-    def make: ZLayer[Any, Nothing, ZIOJmsConnectionManager] = ZLayer.fromEffect(makeService)
+    def make: ZLayer[Any, Nothing, JmsConnectionManagerService] = ZLayer.fromEffect(makeService)
 
     private val makeService: ZIO[Any, Nothing, Service] = for {
       cons <- Ref.make(Map.empty[String, JmsConnection])

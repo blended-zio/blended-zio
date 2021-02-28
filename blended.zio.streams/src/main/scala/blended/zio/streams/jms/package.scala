@@ -8,7 +8,7 @@ import zio.blocking._
 import zio.stream._
 import zio.duration.Duration
 
-import blended.zio.streams.jms.ZIOJmsConnectionManager.ZIOJmsConnectionManager
+import blended.zio.streams.jms.JmsConnectionManager._
 import blended.zio.streams.jms.JmsDestination._
 
 package object jms {
@@ -17,7 +17,7 @@ package object jms {
     cf: JmsConnectionFactory,
     clientId: String
   ) = for {
-    mgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+    mgr <- ZIO.service[JmsConnectionManager.Service]
     con <- mgr.connect(cf, clientId)
   } yield con
 
@@ -25,7 +25,7 @@ package object jms {
     con: JmsConnection,
     cause: Option[Throwable]
   ) = for {
-    mgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+    mgr <- ZIO.service[JmsConnectionManager.Service]
     _   <- mgr.reconnect(con, cause)
   } yield ()
 
@@ -120,7 +120,7 @@ package object jms {
     prod: JmsProducer,
     dest: JmsDestination
   ) =
-    ZSink.foreach[ZEnv with Logging with ZIOJmsConnectionManager, JMSException, String](s => send(s, prod, dest))
+    ZSink.foreach[ZEnv with Logging with JmsConnectionManagerService, JMSException, String](s => send(s, prod, dest))
   // end:doctag<sink>
 
   def recoveringJmsSink(
