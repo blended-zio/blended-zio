@@ -4,7 +4,6 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  private val Scala212 = "2.12.13"
   private val Scala213 = "2.13.5"
 
   private val ScalaDefault = Scala213
@@ -76,7 +75,7 @@ object BuildHelper {
   def stdSettings(prjName: String) =
     Seq(
       name := s"$prjName",
-      crossScalaVersions := Seq(Scala212, Scala213),
+      crossScalaVersions := Seq(Scala213),
       scalaVersion in ThisBuild := ScalaDefault,
       scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
       skip.in(publish) := false,

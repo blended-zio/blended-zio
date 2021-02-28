@@ -126,7 +126,7 @@ final case class FlowEnvelope[M <: Has[Map[String, MsgProperty[_]]], C](
     FlowEnvelope(meta.update[EnvelopeHeader](_ => header.toMap), content)
 
   // TODO: Can we do better here ?
-  def header[T: Tag](name: String)(implicit tag: Tag[T]): Option[T] = {
+  def header[T](name: String)(implicit tag: Tag[T]): Option[T] = {
 
     val typeMatches: Map[String, Seq[String]] = Map(
       "java.lang.Integer" -> Seq("int")
