@@ -3,11 +3,37 @@ package blended.zio.streams.jms
 import javax.jms._
 import zio._
 
+sealed trait JmsDestination {
+  val name: String
+  def create(session: JmsSession): ZIO[Any, JMSException, Destination]
+  def asString: String
+}
+
 object JmsDestination {
 
-  private[jms] val destSeparator = ":"
-  private[jms] val TOPICTAG      = "topic"
-  private[jms] val QUEUETAG      = "queue"
+  final case class JmsTopic(override val name: String) extends JmsDestination {
+
+    override def create(jmsSess: JmsSession) =
+      ZIO.effect(jmsSess.session.createTopic(name)).refineOrDie { case t: JMSException => t }
+
+    override val asString: String            = s"${TOPICTAG}${destSeparator}$name"
+  }
+
+  final case class JmsDurableTopic(override val name: String, subscriberName: String) extends JmsDestination {
+
+    override def create(jmsSess: JmsSession) =
+      ZIO.effect(jmsSess.session.createTopic(name)).refineOrDie { case t: JMSException => t }
+
+    override val asString: String            = s"${TOPICTAG}${destSeparator}${subscriberName}${destSeparator}$name"
+  }
+
+  final case class JmsQueue(override val name: String) extends JmsDestination {
+
+    override def create(jmsSess: JmsSession) =
+      ZIO.effect(jmsSess.session.createQueue(name)).refineOrDie { case t: JMSException => t }
+
+    override val asString: String            = s"$QUEUETAG$name"
+  }
 
   def fromString(destName: String) = for {
     parts <- ZIO.succeed(Option(destName).getOrElse("").split(destSeparator))
@@ -41,35 +67,9 @@ object JmsDestination {
     case q: javax.jms.Queue => ZIO.succeed(JmsQueue(q.getQueueName()))
     case _                  => ZIO.fail(new IllegalArgumentException(s"Unknown destination type [${jmsDest.getClass().getName()}]"))
   }
-}
 
-sealed trait JmsDestination {
-  val name: String
-  def create(session: JmsSession): ZIO[Any, JMSException, Destination]
-  def asString: String
-}
+  private[jms] val destSeparator = ":"
+  private[jms] val TOPICTAG      = "topic"
+  private[jms] val QUEUETAG      = "queue"
 
-final case class JmsTopic(override val name: String) extends JmsDestination {
-
-  override def create(jmsSess: JmsSession) =
-    ZIO.effect(jmsSess.session.createTopic(name)).refineOrDie { case t: JMSException => t }
-
-  override val asString: String            = s"${JmsDestination.TOPICTAG}${JmsDestination.destSeparator}$name"
-}
-
-final case class JmsDurableTopic(override val name: String, subscriberName: String) extends JmsDestination {
-
-  override def create(jmsSess: JmsSession) =
-    ZIO.effect(jmsSess.session.createTopic(name)).refineOrDie { case t: JMSException => t }
-
-  override val asString: String            =
-    s"${JmsDestination.TOPICTAG}${JmsDestination.destSeparator}${subscriberName}${JmsDestination.destSeparator}$name"
-}
-
-final case class JmsQueue(override val name: String) extends JmsDestination {
-
-  override def create(jmsSess: JmsSession) =
-    ZIO.effect(jmsSess.session.createQueue(name)).refineOrDie { case t: JMSException => t }
-
-  override val asString: String            = name
 }

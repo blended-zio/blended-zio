@@ -10,11 +10,13 @@ import zio.duration._
 import zio.logging._
 import zio.logging.slf4j._
 
-import blended.zio.activemq.AMQBroker
 import org.apache.activemq.broker.BrokerService
-import blended.zio.streams.jms._
 import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
+
+import blended.zio.activemq.AMQBroker
+import blended.zio.streams.jms._
+import JmsDestination._
 
 object RecoveringJmsApp extends App {
 

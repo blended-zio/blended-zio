@@ -9,6 +9,7 @@ import zio.stream._
 import zio.duration.Duration
 
 import blended.zio.streams.jms.ZIOJmsConnectionManager.ZIOJmsConnectionManager
+import blended.zio.streams.jms.JmsDestination._
 
 package object jms {
 
