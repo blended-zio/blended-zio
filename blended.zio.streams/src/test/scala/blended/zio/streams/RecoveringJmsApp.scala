@@ -7,7 +7,6 @@ import zio._
 import zio.console._
 import zio.clock._
 import zio.duration._
-import zio.logging._
 import zio.logging.slf4j._
 
 import org.apache.activemq.broker.BrokerService
@@ -15,6 +14,7 @@ import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
+
 import blended.zio.streams.jms._
 
 import JmsDestination._
@@ -23,16 +23,13 @@ import JmsApiObject._
 
 object RecoveringJmsApp extends App {
 
-  private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
+  private val sdf    = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
+  private val logEnv = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
 
-  private val logEnv: ZLayer[Any, Nothing, ZEnv with Logging] =
-    ZEnv.live ++ Slf4jLogger.make((_, message) => message)
-
-  private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
-    logEnv >>> AMQBroker.simple("simple")
+  private val brokerEnv = logEnv >>> AMQBroker.simple("simple")
 
   private val combinedEnv =
-    logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
+    brokerEnv ++ defaultJmsEnv(logEnv)
 
   // doctag<stream>
   private val stream: ZStream[ZEnv, Nothing, String] = ZStream

@@ -22,7 +22,7 @@ object JmsApi {
   val defaultJmsEnv: ZLayer[Any, Nothing, Logging] => ZLayer[
     Any,
     Nothing,
-    Any with Logging with JmsConnectionManagerService with RuntimeIdService
+    Logging with JmsConnectionManagerService with RuntimeIdService
   ] =
     logging => logging ++ JmsConnectionManager.Service.make ++ RuntimeId.Service.make
 
@@ -136,7 +136,7 @@ object JmsApi {
     prod: JmsProducer,
     dest: JmsDestination
   ) =
-    ZSink.foreach[ZEnv with Logging with JmsConnectionManagerService, JMSException, String](s => send(s, prod, dest))
+    ZSink.foreach[JmsEnv, JMSException, String](s => send(s, prod, dest))
   // end:doctag<sink>
 
   def recoveringJmsSink(

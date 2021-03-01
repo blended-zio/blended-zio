@@ -80,71 +80,7 @@ object MsgProperty {
 final case class FlowEnvelope[M <: Has[Map[String, MsgProperty[_]]], C](
   meta: M,
   content: C
-) {
-
-  import FlowEnvelope.EnvelopeHeader
-
-  /**
-   * Simply map the content of the FlowEnvelope by mapping the envelope content and keep the Metadata
-   */
-  def map[C1](f: C => C1) = FlowEnvelope(meta, f(content))
-
-  /**
-   * Zip two envelopes by building a 2-tuple over the contents add the headers of the right hand side to
-   * the headers on the left hand side - potentially overwriting existing headers
-   */
-  def zip[M1 <: Has[EnvelopeHeader], C1](env: FlowEnvelope[M1, C1]) =
-    FlowEnvelope(meta.update[EnvelopeHeader](left => left ++ env.meta.get[EnvelopeHeader]), (content, env.content))
-
-  /**
-   * Stick an arbitrary object into the Metadata, so that it can be extracted with a proper type later on.
-   */
-  def withMeta[M2: Tag](m: M2): FlowEnvelope[M with Has[M2], C] = FlowEnvelope(meta.add[M2](m), content)
-
-  /**
-   * Add a named header to the envelope
-   */
-  def addHeader(header: (String, MsgProperty[_])*): FlowEnvelope[M, C] =
-    FlowEnvelope(
-      meta.update[EnvelopeHeader](_ ++ header.toMap),
-      content
-    )
-
-  /**
-   * Remove the headers with the given names
-   */
-  def removeHeader(name: String*): FlowEnvelope[M, C] =
-    FlowEnvelope(
-      meta.update[EnvelopeHeader](_ -- name),
-      content
-    )
-
-  /**
-   * Replace the current set of envelope headers with a new one
-   */
-  def setHeader(header: (String, MsgProperty[_])*): FlowEnvelope[M, C] =
-    FlowEnvelope(meta.update[EnvelopeHeader](_ => header.toMap), content)
-
-  // TODO: Can we do better here ?
-  def header[T](name: String)(implicit tag: Tag[T]): Option[T] = {
-
-    val typeMatches: Map[String, Seq[String]] = Map(
-      "java.lang.Integer" -> Seq("int")
-    )
-
-    meta.get[EnvelopeHeader].get(name) match {
-      case Some(p) =>
-        val stored  = p.value.getClass().getName()
-        val desired = tag.closestClass.getName()
-        if (stored.equals(desired) || typeMatches.get(stored).map(_.contains(desired)).getOrElse(false))
-          Some(p.value.asInstanceOf[T])
-        else None
-      case _       => None
-    }
-  }
-
-}
-
+)
 object FlowEnvelope {
   type EnvelopeHeader = Map[String, MsgProperty[_]]
 
@@ -157,6 +93,72 @@ object FlowEnvelope {
    * Run an effect to produce some content and then create an envelope from the result
    */
   def fromEffect[R, E, C](e: ZIO[R, E, C]) = e.map(make)
+
+  implicit class FlowEnvelopeSyntax[M <: Has[Map[String, MsgProperty[_]]], C](env: FlowEnvelope[M, C]) {
+
+    /**
+     * Simply map the content of the FlowEnvelope by mapping the envelope content and keep the Metadata
+     */
+    def map[C1](f: C => C1) = FlowEnvelope[M, C1](env.meta, f(env.content))
+
+    /**
+     * Zip two envelopes by building a 2-tuple over the contents add the headers of the right hand side to
+     * the headers on the left hand side - potentially overwriting existing headers
+     */
+    def zip[M1 <: Has[EnvelopeHeader], C1](that: FlowEnvelope[M1, C1]) =
+      FlowEnvelope(
+        env.meta.update[EnvelopeHeader](left => left ++ that.meta.get[EnvelopeHeader]),
+        (env.content, that.content)
+      )
+
+    /**
+     * Stick an arbitrary object into the Metadata, so that it can be extracted with a proper type later on.
+     */
+    def withMeta[M2: Tag](m: M2): FlowEnvelope[M with Has[M2], C] = FlowEnvelope(env.meta.add[M2](m), env.content)
+
+    /**
+     * Add a named header to the envelope
+     */
+    def addHeader(header: (String, MsgProperty[_])*): FlowEnvelope[M, C] =
+      FlowEnvelope(
+        env.meta.update[EnvelopeHeader](_ ++ header.toMap),
+        env.content
+      )
+
+    /**
+     * Remove the headers with the given names
+     */
+    def removeHeader(name: String*): FlowEnvelope[M, C] =
+      FlowEnvelope(
+        env.meta.update[EnvelopeHeader](_ -- name),
+        env.content
+      )
+
+    /**
+     * Replace the current set of envelope headers with a new one
+     */
+    def setHeader(header: (String, MsgProperty[_])*): FlowEnvelope[M, C] =
+      FlowEnvelope(env.meta.update[EnvelopeHeader](_ => header.toMap), env.content)
+
+    // TODO: Can we do better here ?
+    def header[T](name: String)(implicit tag: Tag[T]): Option[T] = {
+
+      val typeMatches: Map[String, Seq[String]] = Map(
+        "java.lang.Integer" -> Seq("int")
+      )
+
+      env.meta.get[EnvelopeHeader].get(name) match {
+        case Some(p) =>
+          val stored  = p.value.getClass().getName()
+          val desired = tag.closestClass.getName()
+          if (stored.equals(desired) || typeMatches.get(stored).map(_.contains(desired)).getOrElse(false))
+            Some(p.value.asInstanceOf[T])
+          else None
+        case _       => None
+      }
+    }
+
+  }
 
   private[streams] val noHeader: EnvelopeHeader = Map[String, MsgProperty[_]]()
 }

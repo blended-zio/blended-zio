@@ -8,7 +8,6 @@ import zio._
 import zio.console._
 import zio.clock._
 import zio.duration._
-import zio.logging._
 import zio.logging.slf4j._
 
 import org.apache.activemq.broker.BrokerService
@@ -27,14 +26,11 @@ object JmsDemoApp extends App {
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
   // doctag<layer>
-  private val logEnv: ZLayer[Any, Nothing, ZEnv with Logging] =
-    ZEnv.live ++ Slf4jLogger.make((_, message) => message)
+  private val logEnv = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
 
-  private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
-    logEnv >>> AMQBroker.simple("simple")
+  private val brokerEnv = logEnv >>> AMQBroker.simple("simple")
 
-  private val combinedEnv =
-    logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
+  private val combinedEnv = logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
   // end:doctag<layer>
 
   // doctag<stream>

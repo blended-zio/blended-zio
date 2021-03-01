@@ -7,9 +7,9 @@ import zio.logging._
 
 object AMQBroker {
 
-  type AMQBroker = Has[BrokerService]
+  type AMQBrokerService = Has[BrokerService]
 
-  def simple(brokerName: String): ZLayer[Logging with Blocking, Throwable, AMQBroker] =
+  def simple(brokerName: String): ZLayer[Logging with Blocking, Throwable, AMQBrokerService] =
     ZLayer.fromManaged(managedBroker(brokerName))
 
   private def managedBroker(brokerName: String): ZManaged[Logging with Blocking, Throwable, BrokerService] =
