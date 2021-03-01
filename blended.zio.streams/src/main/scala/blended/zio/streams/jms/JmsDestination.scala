@@ -34,7 +34,7 @@ object JmsDestination {
     override def create(jmsSess: JmsSession) =
       ZIO.effect(jmsSess.session.createQueue(name)).refineOrDie { case t: JMSException => t }
 
-    override val asString: String            = s"$QUEUETAG$name"
+    override val asString: String            = s"$QUEUETAG${destSeparator}$name"
   }
 
   def fromString(destName: String) = for {

@@ -16,7 +16,6 @@ import zio.stream.ZStream
 import blended.zio.activemq.AMQBroker
 
 import blended.zio.streams.jms._
-
 import JmsDestination._
 import JmsApi._
 import JmsApiObject._
@@ -37,6 +36,7 @@ object RecoveringJmsApp extends App {
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
+        .map(s => FlowEnvelope.make(s))
     )
   // end:doctag<stream>
 
@@ -64,8 +64,8 @@ object RecoveringJmsApp extends App {
                    .schedule(Schedule.duration(10.seconds))
                    .fork
     jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
-    jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
-    consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
+    jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second, stringEnvelopeEncoder)
+    consumer  <- jmsStream.foreach(s => putStrLn(s.toString())).fork
     producer  <- stream.run(jmsSink).fork
     _         <- f.join >>> consumer.interrupt >>> producer.interrupt
   } yield ()

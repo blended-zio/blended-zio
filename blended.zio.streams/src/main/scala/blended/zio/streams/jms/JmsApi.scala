@@ -14,22 +14,30 @@ import RuntimeId.RuntimeIdService
 import JmsConnectionManager._
 import JmsDestination._
 import JmsApiObject._
+import blended.zio.streams.FlowEnvelope
 
 object JmsApi {
 
-  type JmsEnv = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
+  type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
+  type JmsEncoder[T] = JmsProducer => FlowEnvelope[_, T] => ZIO[Blocking, JMSException, Message]
 
   val defaultJmsEnv: ZLayer[Any, Nothing, Logging] => ZLayer[
     Any,
     Nothing,
     Logging with JmsConnectionManagerService with RuntimeIdService
   ] =
-    logging => logging ++ JmsConnectionManager.Service.make ++ RuntimeId.Service.make
+    logging => logging ++ JmsConnectionManager.default ++ RuntimeId.default
+
+  val stringEnvelopeEncoder: JmsEncoder[String] = p =>
+    s =>
+      effectBlocking {
+        p.session.session.createTextMessage(s.content)
+      }.refineOrDie { case je: JMSException => je }
 
   def connect(
     cf: JmsConnectionFactory,
     clientId: String
-  ) = for {
+  )                                             = for {
     mgr <- ZIO.service[JmsConnectionManager.Service]
     con <- mgr.connect(cf, clientId)
   } yield con
@@ -93,15 +101,16 @@ object JmsApi {
     )
 
   // doctag<send>
-  def send(
-    text: String,
+  def send[T](
+    content: FlowEnvelope[_, T],
     prod: JmsProducer,
-    dest: JmsDestination
+    dest: JmsDestination,
+    encode: JmsEncoder[T]
   ) = (for {
-    msg <- effectBlocking(prod.session.session.createTextMessage(text))
+    msg <- encode(prod)(content)
     d   <- dest.create(prod.session)
     _   <- effectBlocking(prod.producer.send(d, msg))
-    _   <- log.debug(s"Message [$text] sent successfully with [$prod] to [${dest.asString}]")
+    _   <- log.debug(s"Message [$content] sent successfully with [$prod] to [${dest.asString}]")
   } yield ()).flatMapError { t =>
     log.warn(s"Error sending message with [$prod] to [$dest]: [${t.getMessage()}]") *> ZIO.succeed(t)
   }.refineOrDie { case t: JMSException => t }
@@ -118,7 +127,7 @@ object JmsApi {
 
   // doctag<stream>
   def jmsStream(cons: JmsConsumer) =
-    ZStream.repeatEffect(receive(cons)).collect { case Some(s) => s }
+    ZStream.repeatEffect(receive(cons)).collect { case Some(s) => FlowEnvelope.make(s) }
   // end:doctag<stream>
 
   def recoveringJmsStream(
@@ -132,20 +141,22 @@ object JmsApi {
   } yield str
 
   // doctag<sink>
-  def jmsSink(
+  def jmsSink[T](
     prod: JmsProducer,
-    dest: JmsDestination
+    dest: JmsDestination,
+    encode: JmsEncoder[T]
   ) =
-    ZSink.foreach[JmsEnv, JMSException, String](s => send(s, prod, dest))
+    ZSink.foreach[JmsEnv, JMSException, FlowEnvelope[_, T]](c => send[T](c, prod, dest, encode))
   // end:doctag<sink>
 
-  def recoveringJmsSink(
+  def recoveringJmsSink[T](
     cf: JmsConnectionFactory,
     clientId: String,
     dest: JmsDestination,
-    retryInterval: Duration
+    retryInterval: Duration,
+    encode: JmsEncoder[T]
   ) = for {
-    sinkFact <- RecoveringJmsSink.make(cf, clientId)
+    sinkFact <- RecoveringJmsSink.make[T](cf, clientId, encode)
     s        <- sinkFact.sink(dest, retryInterval)
   } yield s
 }

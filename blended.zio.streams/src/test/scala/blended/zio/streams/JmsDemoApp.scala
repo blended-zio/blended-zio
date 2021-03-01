@@ -2,7 +2,6 @@ package blended.zio.streams
 
 import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
-import javax.jms._
 
 import zio._
 import zio.console._
@@ -34,11 +33,12 @@ object JmsDemoApp extends App {
   // end:doctag<layer>
 
   // doctag<stream>
-  private val stream: ZStream[ZEnv, Nothing, String] = ZStream
+  private val stream = ZStream
     .fromSchedule(Schedule.spaced(500.millis).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
+        .map(s => FlowEnvelope.make(s))
     )
   // end:doctag<stream>
 
@@ -48,15 +48,16 @@ object JmsDemoApp extends App {
 
   // doctag<producer>
   private def producer(con: JmsConnection) =
-    createSession(con).use(session => createProducer(session).use(prod => stream.run(jmsSink(prod, testDest))))
+    createSession(con).use(session =>
+      createProducer(session).use(prod => stream.run(jmsSink(prod, testDest, stringEnvelopeEncoder)))
+    )
   // end:doctag<producer>
 
   // doctag<consumer>
   private def consumer(con: JmsConnection) =
     createSession(con).use { session =>
       createConsumer(session, testDest).use { cons =>
-        jmsStream(cons).collect { case m: TextMessage => m.getText() }
-          .foreach(s => putStrLn(s))
+        jmsStream(cons).foreach(s => putStrLn(s.toString()))
       }
     }
   // end:doctag<consumer>

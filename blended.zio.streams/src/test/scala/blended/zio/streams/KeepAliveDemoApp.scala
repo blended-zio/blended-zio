@@ -30,11 +30,12 @@ object KeepAliveDemoApp extends App {
   private val combinedEnv = logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
 
   // doctag<stream>
-  private val stream: ZStream[ZEnv, Nothing, String] = ZStream
+  private val stream = ZStream
     .fromSchedule(Schedule.spaced(10.seconds).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
+        .map(s => FlowEnvelope.make(s))
     )
   // end:doctag<stream>
 
@@ -55,8 +56,8 @@ object KeepAliveDemoApp extends App {
     _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
     f         <- ZIO.unit.schedule(Schedule.duration(1.minutes)).fork
     jmsStream <- recoveringJmsStream(amqCF, clientId, testDest, 2.seconds)
-    jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second)
-    consumer  <- jmsStream.foreach(s => putStrLn(s)).fork
+    jmsSink   <- recoveringJmsSink(amqCF, clientId, testDest, 1.second, stringEnvelopeEncoder)
+    consumer  <- jmsStream.foreach(s => putStrLn(s.toString())).fork
     producer  <- stream.run(jmsSink).fork
     _         <- f.join >>> consumer.interrupt >>> producer.interrupt
   } yield ()
