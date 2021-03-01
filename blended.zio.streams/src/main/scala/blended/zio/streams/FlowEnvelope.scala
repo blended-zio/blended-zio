@@ -77,7 +77,7 @@ object MsgProperty {
  * to always have envelope headers.
  *
  */
-final case class FlowEnvelope[M <: Has[Map[String, MsgProperty[_]]], C](
+final case class FlowEnvelope[M <: Has[FlowEnvelope.EnvelopeHeader], C](
   meta: M,
   content: C
 )
@@ -94,7 +94,7 @@ object FlowEnvelope {
    */
   def fromEffect[R, E, C](e: ZIO[R, E, C]) = e.map(make)
 
-  implicit class FlowEnvelopeSyntax[M <: Has[Map[String, MsgProperty[_]]], C](env: FlowEnvelope[M, C]) {
+  implicit class FlowEnvelopeSyntax[M <: Has[EnvelopeHeader], C](env: FlowEnvelope[M, C]) {
 
     /**
      * Simply map the content of the FlowEnvelope by mapping the envelope content and keep the Metadata

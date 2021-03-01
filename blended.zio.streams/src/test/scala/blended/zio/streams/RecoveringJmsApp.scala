@@ -32,7 +32,7 @@ object RecoveringJmsApp extends App {
     brokerEnv ++ defaultJmsEnv(logEnv)
 
   // doctag<stream>
-  private val stream: ZStream[ZEnv, Nothing, String] = ZStream
+  private val stream = ZStream
     .fromSchedule(Schedule.spaced(1000.millis).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
