@@ -80,7 +80,7 @@ lazy val blendedStreams =
       libraryDependencies ++= (zioDefault ++ testDefault),
       libraryDependencies += jms_1_1
     )
-    .dependsOn(blendedActiveMq)
+    .dependsOn(blendedCore, blendedActiveMq)
 
 lazy val blendedITest =
   (project in file("blended.zio.itest"))

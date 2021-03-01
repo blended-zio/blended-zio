@@ -1,4 +1,4 @@
-package blended.zio.streams
+package blended.zio.streams.jms
 
 import javax.jms._
 
@@ -8,10 +8,23 @@ import zio.blocking._
 import zio.stream._
 import zio.duration.Duration
 
-import blended.zio.streams.jms.JmsConnectionManager._
-import blended.zio.streams.jms.JmsDestination._
+import blended.zio.core.RuntimeId
+import RuntimeId.RuntimeIdService
 
-package object jms {
+import JmsConnectionManager._
+import JmsDestination._
+import JmsApiObject._
+
+object JmsApi {
+
+  type JmsEnv = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
+
+  val defaultJmsEnv: ZLayer[Any, Nothing, Logging] => ZLayer[
+    Any,
+    Nothing,
+    Any with Logging with JmsConnectionManagerService with RuntimeIdService
+  ] =
+    logging => logging ++ JmsConnectionManager.Service.make ++ RuntimeId.Service.make
 
   def connect(
     cf: JmsConnectionFactory,
@@ -30,11 +43,12 @@ package object jms {
   } yield ()
 
   def createSession(con: JmsConnection) = ZManaged.make((for {
-    js <- effectBlocking(
-            con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
-          )
-    n   = con.nextSessionName
-    s   = JmsSession(con, n, js)
+    rid <- ZIO.service[RuntimeId.Service]
+    js  <- effectBlocking(
+             con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
+           )
+    id  <- rid.nextId(con.id)
+    s    = JmsSession(con, s"S-$id", js)
   } yield s).refineOrDie { case t: JMSException => t })(s =>
     for {
       _ <- log.debug(s"Closing JMS Session [$s]")
@@ -43,11 +57,12 @@ package object jms {
   )
 
   def createProducer(js: JmsSession) = ZManaged.make(for {
-    n <- ZIO.succeed(js.nextProdName)
-    p <- effectBlocking(
-           js.session.createProducer(null)
-         ).map(prod => JmsProducer(js, n, prod)).refineOrDie { case t: JMSException => t }
-    _ <- log.debug(s"Created JMS Producer [${p.id}]")
+    rid <- ZIO.service[RuntimeId.Service]
+    id  <- rid.nextId(js.id)
+    p   <- effectBlocking(
+             js.session.createProducer(null)
+           ).map(prod => JmsProducer(js, s"P-$id", prod)).refineOrDie { case t: JMSException => t }
+    _   <- log.debug(s"Created JMS Producer [${p.id}]")
   } yield p)(p =>
     for {
       _ <- log.debug(s"Closing JMS Producer [${p.id}]")
@@ -58,16 +73,17 @@ package object jms {
   def createConsumer(js: JmsSession, dest: JmsDestination) =
     ZManaged.make(
       for {
-        n <- ZIO.succeed(js.nextConsName)
-        d <- dest.create(js)
-        c <- effectBlocking {
-               dest match {
-                 case JmsDurableTopic(_, subscriberName) =>
-                   js.session.createDurableSubscriber(d.asInstanceOf[Topic], subscriberName)
-                 case _                                  => js.session.createConsumer(d)
-               }
-             }.map(cons => JmsConsumer(js, n, dest, cons)).refineOrDie { case t: JMSException => t }
-        _ <- log.debug(s"Created JMS Consumer [$c]")
+        rid <- ZIO.service[RuntimeId.Service]
+        id  <- rid.nextId(js.id)
+        d   <- dest.create(js)
+        c   <- effectBlocking {
+                 dest match {
+                   case JmsDurableTopic(_, subscriberName) =>
+                     js.session.createDurableSubscriber(d.asInstanceOf[Topic], subscriberName)
+                   case _                                  => js.session.createConsumer(d)
+                 }
+               }.map(cons => JmsConsumer(js, s"C-$id", dest, cons)).refineOrDie { case t: JMSException => t }
+        _   <- log.debug(s"Created JMS Consumer [$c]")
       } yield c
     )(c =>
       for {

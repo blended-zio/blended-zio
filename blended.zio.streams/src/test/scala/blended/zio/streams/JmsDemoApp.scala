@@ -16,7 +16,10 @@ import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
+
 import blended.zio.streams.jms._
+import JmsApi._
+import JmsApiObject._
 import JmsDestination._
 
 object JmsDemoApp extends App {
@@ -30,10 +33,8 @@ object JmsDemoApp extends App {
   private val brokerEnv: ZLayer[Any, Throwable, AMQBroker.AMQBroker] =
     logEnv >>> AMQBroker.simple("simple")
 
-  private val mgrEnv = ZIOJmsConnectionManager.Service.make
-
   private val combinedEnv =
-    logEnv ++ brokerEnv ++ mgrEnv
+    logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
   // end:doctag<layer>
 
   // doctag<stream>
@@ -68,7 +69,7 @@ object JmsDemoApp extends App {
   private val program =
     for {
       _      <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
-      conMgr <- ZIO.service[ZIOJmsConnectionManager.Service]
+      conMgr <- ZIO.service[JmsConnectionManager.Service]
       _      <- (for {
                   con <- conMgr.connect(cf, "sample")
                   _   <- conMgr.reconnect(con, Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork

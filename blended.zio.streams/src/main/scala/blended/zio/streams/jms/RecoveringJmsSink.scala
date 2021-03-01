@@ -1,13 +1,12 @@
 package blended.zio.streams.jms
 
-import javax.jms.JMSException
-
 import zio._
 import zio.duration._
 import zio.logging._
 import zio.stream._
 
-import blended.zio.streams.jms.JmsConnectionManager._
+import JmsApiObject._
+import JmsApi._
 
 private[jms] object RecoveringJmsSink {
 
@@ -34,11 +33,11 @@ sealed abstract class RecoveringJmsSink private (
     retryInterval: Duration
   ) = {
 
-    def produceOne(p: JmsProducer): ZIO[ZEnv with Logging, JMSException, Unit] = buffer.take.flatMap { s: String =>
-      send(s, p, dest)
+    def produceOne(p: JmsProducer) = buffer.take.flatMap { s: String =>
+      JmsApi.send(s, p, dest)
     }
 
-    def produceForever: ZIO[ZEnv with Logging with JmsConnectionManagerService, Nothing, Unit] = {
+    def produceForever: ZIO[JmsEnv, Nothing, Unit] = {
       val part = for {
         _      <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
         conMgr <- ZIO.service[JmsConnectionManager.Service]

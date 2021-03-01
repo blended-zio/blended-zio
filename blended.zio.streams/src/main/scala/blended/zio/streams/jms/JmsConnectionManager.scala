@@ -2,6 +2,7 @@ package blended.zio.streams.jms
 
 import javax.jms._
 import java.util.concurrent.TimeUnit
+import java.text.SimpleDateFormat
 
 import zio._
 import zio.stream._
@@ -10,8 +11,10 @@ import zio.blocking._
 import zio.logging._
 
 import blended.zio.streams.{ KeepAliveMonitor, DefaultKeepAliveMonitor }
-import java.text.SimpleDateFormat
 import blended.zio.streams.KeepAliveException
+
+import JmsApiObject._
+import JmsApi._
 
 object JmsConnectionManager {
 
@@ -22,14 +25,14 @@ object JmsConnectionManager {
     def connect(
       cf: JmsConnectionFactory,
       clientId: String
-    ): ZIO[ZEnv with Logging with JmsConnectionManagerService, JMSException, JmsConnection]
+    ): ZIO[JmsEnv, JMSException, JmsConnection]
     // Reconnect a given connection with an optional cause
-    def reconnect(con: JmsConnection, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
-    def reconnect(id: String, cause: Option[Throwable]): ZIO[ZEnv with Logging, JMSException, Unit]
+    def reconnect(con: JmsConnection, cause: Option[Throwable]): ZIO[JmsEnv, JMSException, Unit]
+    def reconnect(id: String, cause: Option[Throwable]): ZIO[JmsEnv, JMSException, Unit]
     // Close a given connection for good and don't reconnect
-    def close(con: JmsConnection): ZIO[ZEnv with Logging, JMSException, Unit]
+    def close(con: JmsConnection): ZIO[JmsEnv, JMSException, Unit]
     // shutdown the connection manager, thereby closing all current connections
-    def shutdown: ZIO[ZEnv with Logging, Nothing, Unit]
+    def shutdown: ZIO[JmsEnv, Nothing, Unit]
   }
 
   object Service {
@@ -80,13 +83,16 @@ object JmsConnectionManager {
       // A semaphore to access the connection semaphores
       private[jms] val sem: Semaphore
 
+      // Just the key to find the desired connection in the cached connections
+      private val conCacheId: JmsConnectionFactory => String => String = cf => clientId => s"${cf.id}-$clientId"
+
       // doctag<connect>
       private[jms] def connect(
         cf: JmsConnectionFactory,
         clientId: String
       ) = {
 
-        val cid = cf.connId(clientId)
+        val cid = conCacheId(cf)(clientId)
 
         sem.withPermit(
           for {
@@ -137,7 +143,7 @@ object JmsConnectionManager {
         t: Option[Throwable]
       ) = {
 
-        val cid = cf.connId(clientId)
+        val cid = conCacheId(cf)(clientId)
 
         ZIO.ifM(getConnection(cid).map(_.isDefined))(
           ZIO.unit,
@@ -159,7 +165,7 @@ object JmsConnectionManager {
         clientId: String
       ) = {
 
-        val cid = cf.connId(clientId)
+        val cid = conCacheId(cf)(clientId)
 
         ZIO.ifM(isRecovering(cid))(
           ZIO.fail(new JMSException(s"Connection factory [$cid] is in recovery")),

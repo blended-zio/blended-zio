@@ -7,7 +7,8 @@ import zio.duration._
 import zio.logging._
 import zio.stream._
 
-import blended.zio.streams.jms.JmsConnectionManager._
+import JmsApiObject._
+import JmsApi._
 
 private[jms] object RecoveringJmsStream {
 
@@ -40,7 +41,7 @@ sealed abstract class RecoveringJmsStream private (
     }
       .foreach(s => buffer.offer(s))
 
-    def consumeForEver: ZIO[ZEnv with Logging with JmsConnectionManagerService, Nothing, Unit] = {
+    def consumeForEver: ZIO[JmsEnv, Nothing, Unit] = {
       val part = for {
         _      <- log.debug(s"Trying to recover consumer for [${factory.id}] with destination [$dest]")
         conMgr <- ZIO.service[JmsConnectionManager.Service]

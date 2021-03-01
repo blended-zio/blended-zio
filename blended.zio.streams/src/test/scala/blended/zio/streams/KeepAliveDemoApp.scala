@@ -15,6 +15,9 @@ import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
 import blended.zio.streams.jms._
+
+import JmsApi._
+import JmsApiObject._
 import JmsDestination._
 
 object KeepAliveDemoApp extends App {
@@ -23,9 +26,8 @@ object KeepAliveDemoApp extends App {
 
   private val logEnv    = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
   private val brokerEnv = logEnv >>> AMQBroker.simple("simple")
-  private val mgrEnv    = ZIOJmsConnectionManager.Service.make
 
-  private val combinedEnv = logEnv ++ brokerEnv ++ mgrEnv
+  private val combinedEnv = logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
 
   // doctag<stream>
   private val stream: ZStream[ZEnv, Nothing, String] = ZStream
