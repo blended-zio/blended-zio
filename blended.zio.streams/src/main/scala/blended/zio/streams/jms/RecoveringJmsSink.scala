@@ -18,9 +18,9 @@ private[jms] object RecoveringJmsSink {
     encode: JmsEncoder[T]
   ) =
     for {
-      q <- zio.Queue.bounded[FlowEnvelope[_, T]](1)
+      q <- zio.Queue.bounded[FlowEnvelope[T]](1)
     } yield new RecoveringJmsSink(cf, clientId, encode) {
-      override private[jms] val buffer: zio.Queue[FlowEnvelope[_, T]] = q
+      override private[jms] val buffer: zio.Queue[FlowEnvelope[T]] = q
     }
 }
 
@@ -29,7 +29,7 @@ sealed abstract class RecoveringJmsSink[T] private (
   clientId: String,
   encode: JmsEncoder[T]
 ) {
-  private[jms] val buffer: zio.Queue[FlowEnvelope[_, T]]
+  private[jms] val buffer: zio.Queue[FlowEnvelope[T]]
 
   // doctag<sink>
   def sink(
@@ -37,7 +37,7 @@ sealed abstract class RecoveringJmsSink[T] private (
     retryInterval: Duration
   ) = {
 
-    def produceOne(p: JmsProducer) = buffer.take.flatMap { s: FlowEnvelope[_, T] =>
+    def produceOne(p: JmsProducer) = buffer.take.flatMap { s: FlowEnvelope[T] =>
       JmsApi.send(s, p, dest, encode)
     }
 

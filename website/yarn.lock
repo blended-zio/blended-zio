@@ -2451,10 +2451,10 @@ bindings@^1.5.0:
   dependencies:
     file-uri-to-path "1.0.0"
 
-blended-include-code-plugin@0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/blended-include-code-plugin/-/blended-include-code-plugin-0.1.0.tgz#27539ce7fc4c0637c2a6a41a459afd9fd22c18c0"
-  integrity sha512-LFFXcLdBZPpj2yeICsZTdkE1pTHDz5g6vtL2ws2sKOaCIuJZG1HjHYZD7ICy8VYa8sLt9YtEtTpwuBs+ohHgJg==
+blended-include-code-plugin@0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/blended-include-code-plugin/-/blended-include-code-plugin-0.1.2.tgz#74fa72126bb41a3abd89c35032b0c8d90ced035c"
+  integrity sha512-nyqzh2m2sI5Ic3evk9yDUKL5hipiuPG0hBW7yyGKlFVqf3rLzrKtji3jQFlhMFYs7I2XwAQ7abPwIKH5DDCI1g==
   dependencies:
     unist-util-visit "2.0.3"
 
@@ -8741,10 +8741,10 @@ remark-footnotes@2.0.0:
   resolved "https://registry.yarnpkg.com/remark-footnotes/-/remark-footnotes-2.0.0.tgz#9001c4c2ffebba55695d2dd80ffb8b82f7e6303f"
   integrity sha512-3Clt8ZMH75Ayjp9q4CorNeyjwIxHFcTkaektplKGl2A1jNGEUey8cKL0ZC5vJwfcD5GFGsNLImLG/NGzWIzoMQ==
 
-remark-kroki-plugin@0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/remark-kroki-plugin/-/remark-kroki-plugin-0.0.2.tgz#275858acb22f327f917634dafe2399506ff56b48"
-  integrity sha512-Qw9VLIT/rI5DBI5DCL3qrdc67iHZD2lWjpaAxr46ETzc8I3JkffH7I9ysjDiIaNJIY4+aEqd7+VxIheIn2NXSg==
+remark-kroki-plugin@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/remark-kroki-plugin/-/remark-kroki-plugin-0.1.1.tgz#58d54159279ea71ecc12c1fc8d8a82dd48b82d12"
+  integrity sha512-baB1glErjo4g0a5dIpj+0GhuETDzpqAIHFUhA4QP2iCYf6OrBIs3xQEtP14NPZM0KIqQ113Hf6Xg0L4YCHmqQA==
   dependencies:
     remark "^13.0.0"
     ts-md5 "1.2.7"

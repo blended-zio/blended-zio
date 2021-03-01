@@ -48,7 +48,7 @@ object RecoveringJmsApp extends App {
       None
     )
 
-  private val clientId: String         = "sampleApp"
+  private val clientId: String         = "recovery"
   private val testDest: JmsDestination = JmsQueue("sample")
 
   // doctag<program>

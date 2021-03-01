@@ -6,6 +6,9 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 
+import FlowEnvelope._
+import MsgProperty._
+
 object FlowEnvelopeTest extends DefaultRunnableSpec {
 
   override def spec = suite("A FlowEnvelope should")(
@@ -18,7 +21,7 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
 
   private val simpleEnvelope = test("create an envelope from a given value with an empty set of headers") {
     val env = FlowEnvelope.make("Hello Andreas")
-    assert(env.meta.get[FlowEnvelope.EnvelopeHeader])(isEmpty)
+    assert(env.meta.get[EnvelopeHeader](headerMeta))(isNone)
   }
 
   private val canMap = test("allows to map the content") {
@@ -30,33 +33,31 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
   private val meta = test("Allows to stick an arbitrary object into the envelopes metadata") {
     val s    = "Hello Andreas"
     val mInt = 7
-    val env  = FlowEnvelope.make(s).withMeta(mInt)
-    assert(env.meta.get[Int])(equalTo(mInt))
+    val env  = FlowEnvelope.make(s).withMeta("foo", mInt)
+    assert(env.meta.get[Int]("foo"))(equalTo(Some(mInt)))
   }
 
   private val simpleHeader = test("allow to set and get a simple header") {
     val s   = "Hello Andreas"
-    val env = FlowEnvelope.make(s).addHeader("foo" -> "bar")
+    val env = FlowEnvelope.make(s).addHeader(EnvelopeHeader("foo" -> StringMsgProperty("bar")))
 
-    val lookupOk   = env.header[String]("foo")
-    val lookupFail = env.header[Int]("foo")
+    val lookupOk   = env.header.get[String]("foo")
+    val lookupFail = env.header.get[Int]("foo")
 
     assert(lookupOk)(equalTo(Some("bar"))) && assert(lookupFail)(isNone)
   }
 
   private val zip = test("allow to zip 2 envelopes") {
 
-    import MsgProperty._
-
     val s = "Hello Andreas"
 
-    val env1 = FlowEnvelope.make(s).addHeader("foo" -> "bar")
-    val env2 = FlowEnvelope.make(7).addHeader("prop" -> 45)
+    val env1 = FlowEnvelope.make(s).addHeader(EnvelopeHeader("foo" -> StringMsgProperty("bar")))
+    val env2 = FlowEnvelope.make(7).addHeader(EnvelopeHeader("prop" -> IntMsgProperty(45)))
 
     val env = env1.zip(env2)
 
-    val lookup1 = env.header[String]("foo")
-    val lookup2 = env.header[Int]("prop")
+    val lookup1 = env.header.get[String]("foo")
+    val lookup2 = env.header.get[Int]("prop")
 
     val a1 = assert(env.content)(equalTo((s, 7)))
     val a2 = assert(lookup1)(equalTo(Some("bar")))

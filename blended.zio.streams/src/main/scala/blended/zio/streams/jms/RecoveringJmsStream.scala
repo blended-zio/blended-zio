@@ -16,9 +16,9 @@ private[jms] object RecoveringJmsStream {
     clientId: String,
     retryInterval: Duration
   ) = for {
-    q <- zio.Queue.bounded[FlowEnvelope[_, _]](1)
+    q <- zio.Queue.bounded[FlowEnvelope[_]](1)
   } yield new RecoveringJmsStream(cf, clientId, retryInterval) {
-    override private[jms] val buffer: zio.Queue[FlowEnvelope[_, _]] = q
+    override private[jms] val buffer: zio.Queue[FlowEnvelope[_]] = q
   }
 }
 
@@ -28,7 +28,7 @@ sealed abstract class RecoveringJmsStream private (
   retryInterval: Duration
 ) {
 
-  private[jms] val buffer: zio.Queue[FlowEnvelope[_, _]]
+  private[jms] val buffer: zio.Queue[FlowEnvelope[_]]
 
   // doctag<stream>
   def stream(

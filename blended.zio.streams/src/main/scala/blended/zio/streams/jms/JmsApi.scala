@@ -19,7 +19,7 @@ import blended.zio.streams.FlowEnvelope
 object JmsApi {
 
   type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
-  type JmsEncoder[T] = JmsProducer => FlowEnvelope[_, T] => ZIO[Blocking, JMSException, Message]
+  type JmsEncoder[T] = JmsProducer => FlowEnvelope[T] => ZIO[Blocking, JMSException, Message]
 
   val defaultJmsEnv: ZLayer[Any, Nothing, Logging] => ZLayer[
     Any,
@@ -102,7 +102,7 @@ object JmsApi {
 
   // doctag<send>
   def send[T](
-    content: FlowEnvelope[_, T],
+    content: FlowEnvelope[T],
     prod: JmsProducer,
     dest: JmsDestination,
     encode: JmsEncoder[T]
@@ -146,7 +146,7 @@ object JmsApi {
     dest: JmsDestination,
     encode: JmsEncoder[T]
   ) =
-    ZSink.foreach[JmsEnv, JMSException, FlowEnvelope[_, T]](c => send[T](c, prod, dest, encode))
+    ZSink.foreach[JmsEnv, JMSException, FlowEnvelope[T]](c => send[T](c, prod, dest, encode))
   // end:doctag<sink>
 
   def recoveringJmsSink[T](

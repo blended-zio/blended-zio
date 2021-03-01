@@ -14,17 +14,21 @@ object RuntimeId {
   def default: ZLayer[Any, Nothing, RuntimeIdService] = ZLayer.fromEffect(makeService)
 
   private val makeService = for {
-    ids <- TMap.make[String, Long]().commit
+    idMap <- TMap.make[String, Long]().commit
   } yield {
 
-    val idSvc = new DefaultRuntimeIdService(ids) {}
+    val idSvc = new DefaultRuntimeIdService {
+      override private[core] val ids: TMap[String, Long] = idMap
+    }
 
     new Service {
       override def nextId(category: String) = idSvc.nextId(category)
     }
   }
 
-  sealed abstract private class DefaultRuntimeIdService(ids: TMap[String, Long]) {
+  sealed abstract private class DefaultRuntimeIdService {
+
+    private[core] val ids: TMap[String, Long]
 
     def nextId(id: String): ZIO[Any, Nothing, String] = (for {
       nextId <- ids.getOrElse(id, 0L).map(_ + 1)

@@ -150,8 +150,7 @@ object JmsConnectionManager {
               s"Beginning recovery period for [$cid]" + t.map(c => s" , cause [${c.getMessage}]").getOrElse("")
             )
           _ <- recovering.update(r => cid :: r)
-          f <- recovering.update(_.filterNot(_ == cid)).schedule(Schedule.duration(cf.reconnectInterval)).fork
-          _ <- f.join
+          _ <- recovering.update(_.filterNot(_ == cid)).schedule(Schedule.duration(cf.reconnectInterval))
           _ <- log.debug(s"Ending recovery period for [$cid]")
         } yield ()
       )
