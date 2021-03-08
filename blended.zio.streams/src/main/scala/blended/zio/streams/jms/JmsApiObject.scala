@@ -16,7 +16,8 @@ object JmsApiObject {
     override val id: String,
     factory: ConnectionFactory,
     reconnectInterval: Duration,
-    keepAlive: Option[JmsKeepAliveMonitor]
+    keepAlive: Option[JmsKeepAliveMonitor] = None,
+    credentials: Option[(String, String)] = None
   ) extends JmsApiObject
   // end:doctag<connection>
 

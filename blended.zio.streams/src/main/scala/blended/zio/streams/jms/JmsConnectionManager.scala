@@ -64,7 +64,7 @@ object JmsConnectionManager {
 
       override def close(con: JmsConnection): ZIO[ZEnv with Logging, JMSException, Unit] = conMgr.close(con)
 
-      override def shutdown: ZIO[ZEnv with Logging, Nothing, Unit] = conMgr.shutdown
+      override def shutdown: ZIO[JmsEnv, Nothing, Unit] = conMgr.shutdown
     }
   }
 
@@ -77,7 +77,7 @@ object JmsConnectionManager {
     private[jms] val recovering: Ref[List[String]]
     // Keep a map of current connections keyed by their connection id's
     private[jms] val conns: Ref[Map[String, JmsConnection]]
-    // A semaphore to access the connection semaphores
+    // A semaphore to access the stored connections
     private[jms] val sem: Semaphore
 
     // Just the key to find the desired connection in the cached connections
@@ -225,7 +225,10 @@ object JmsConnectionManager {
       for {
         _  <- log.debug(s"Connecting to [${cf.id}] with clientId [$clientId]")
         jc <- effectBlocking {
-                val jmsConn: Connection = cf.factory.createConnection()
+                val jmsConn: Connection = cf.credentials match {
+                  case Some(c) => cf.factory.createConnection(c._1, c._2)
+                  case None    => cf.factory.createConnection()
+                }
                 jmsConn.setClientID(clientId)
                 jmsConn.start()
                 jmsConn

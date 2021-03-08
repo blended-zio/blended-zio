@@ -42,10 +42,9 @@ object RecoveringJmsApp extends App {
 
   private val amqCF: JmsConnectionFactory =
     JmsConnectionFactory(
-      "amq:amq",
-      new ActiveMQConnectionFactory("vm://simple?create=false"),
-      3.seconds,
-      None
+      id = "amq:amq",
+      factory = new ActiveMQConnectionFactory("vm://simple?create=false"),
+      reconnectInterval = 3.seconds
     )
 
   private val clientId: String         = "recovery"
@@ -55,10 +54,11 @@ object RecoveringJmsApp extends App {
   private val program = for {
     _         <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
     mgr       <- ZIO.service[JmsConnectionManager.Service]
+    con       <- mgr.connect(amqCF, clientId)
     f         <- ZIO.unit.schedule(Schedule.duration(30.seconds)).fork
     _         <- mgr
                    .reconnect(
-                     amqCF.id + "-" + clientId,
+                     con,
                      Some(new Exception("Boom"))
                    )
                    .schedule(Schedule.duration(10.seconds))

@@ -2,6 +2,7 @@ package blended.zio.streams
 
 import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
+import java.util.Hashtable
 
 import zio._
 import zio.console._
@@ -9,32 +10,26 @@ import zio.clock._
 import zio.duration._
 import zio.logging.slf4j._
 
-import org.apache.activemq.broker.BrokerService
-import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
-
-import blended.zio.activemq.AMQBroker
 
 import blended.zio.streams.jms._
 import JmsApi._
 import JmsApiObject._
 import JmsDestination._
+import com.solacesystems.jms.SolJmsUtility
 
 object JmsDemoApp extends App {
 
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
-  // doctag<layer>
   private val logEnv = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
 
-  private val brokerEnv = logEnv >>> AMQBroker.simple("simple")
-
-  private val combinedEnv = logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
+  private val combinedEnv = logEnv ++ defaultJmsEnv(logEnv)
   // end:doctag<layer>
 
   // doctag<stream>
   private val stream = ZStream
-    .fromSchedule(Schedule.spaced(500.millis).jittered)
+    .fromSchedule(Schedule.spaced(10.millis).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
@@ -45,8 +40,15 @@ object JmsDemoApp extends App {
   private val testDest: JmsDestination = JmsQueue("sample")
   private val cf: JmsConnectionFactory =
     JmsConnectionFactory(
-      id = "amq:amq",
-      factory = new ActiveMQConnectionFactory("vm://simple?create=false"),
+      id = "solace:jms",
+      factory = SolJmsUtility
+        .createConnectionFactory(
+          "devel.wayofquality.de",
+          "blended",
+          "blended123",
+          "default",
+          new Hashtable[Any, Any]()
+        ),
       reconnectInterval = 5.seconds
     )
 
@@ -69,18 +71,12 @@ object JmsDemoApp extends App {
   // doctag<program>
   private val program =
     for {
-      _      <- putStrLn("Starting JMS Broker") *> ZIO.service[BrokerService]
       conMgr <- ZIO.service[JmsConnectionManager.Service]
-      _      <- (for {
-                  con <- conMgr.connect(cf, "sample")
-                  _   <- conMgr.reconnect(con, Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork
-                  _   <- for {
-                           c <- consumer(con).fork
-                           p <- producer(con).fork
-                           _ <- c.join
-                           _ <- p.join
-                         } yield ()
-                } yield ())
+      con    <- conMgr.connect(cf, "zio")
+      f      <- getStrLn.fork
+      _      <- consumer(con).fork
+      _      <- producer(con).fork
+      _      <- f.join *> conMgr.close(con)
     } yield ()
   // end:doctag<program>
 

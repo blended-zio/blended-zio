@@ -1,10 +1,9 @@
 package blended.zio.streams
 
 import scala.language.implicitConversions
-import scala.util.Try
 
-import izumi.reflect.Tag
 import zio._
+import scala.reflect.ClassTag
 
 /*
  * The Metadata of a FlowEnvelope represents within the envelope that is required to process the
@@ -19,7 +18,7 @@ import zio._
  * Metadata can also be used to transport context information - i.e. a FlowEnvelope is created
  * from a JMS consumer, is processed by some pipeline and finally we have to decide whether to
  * acknowledge the JMS message or not. This could be achieved, if the JMS consumer also creates
- * an AckHandler and outs it into the Metadata of the envelope.
+ * an AckHandler and puts it into the Metadata of the envelope.
  *
  * ==> Metatdata must be composable
  * ==> We must be able to find out if a certain piece of Metadata is present in the envelope
@@ -44,21 +43,17 @@ object MsgProperty {
   final case class DoubleMsgProperty(override val value: Double)   extends MsgProperty[Double]
   final case class StringMsgProperty(override val value: String)   extends MsgProperty[String]
 
-  object Implicits {
-    implicit def bool2Prop(b: Boolean)  = BooleanMsgProperty(b)
-    implicit def byte2Prop(b: Byte)     = ByteMsgProperty(b)
-    implicit def short2Prop(s: Short)   = ShortMsgProperty(s)
-    implicit def char2Prop(c: Char)     = CharMsgProperty(c)
-    implicit def int2Prop(i: Int)       = IntMsgProperty(i)
-    implicit def long2Prop(l: Long)     = LongMsgProperty(l)
-    implicit def float2Prop(f: Float)   = FloatMsgProperty(f)
-    implicit def dbl2Prop(d: Double)    = DoubleMsgProperty(d)
-    implicit def string2Prop(s: String) = StringMsgProperty(s)
+  implicit def bool2Prop(b: Boolean)  = BooleanMsgProperty(b)
+  implicit def byte2Prop(b: Byte)     = ByteMsgProperty(b)
+  implicit def short2Prop(s: Short)   = ShortMsgProperty(s)
+  implicit def char2Prop(c: Char)     = CharMsgProperty(c)
+  implicit def int2Prop(i: Int)       = IntMsgProperty(i)
+  implicit def long2Prop(l: Long)     = LongMsgProperty(l)
+  implicit def float2Prop(f: Float)   = FloatMsgProperty(f)
+  implicit def dbl2Prop(d: Double)    = DoubleMsgProperty(d)
+  implicit def string2Prop(s: String) = StringMsgProperty(s)
 
-    implicit def int2Prop(i: Integer) = IntMsgProperty(i)
-  }
-
-  import Implicits._
+  implicit def int2Prop(i: Integer) = IntMsgProperty(i)
 
   def make(v: Any): Option[MsgProperty[_]] = v match {
     case b: Boolean => Some(b)
@@ -92,22 +87,15 @@ object EnvelopeHeader {
     def removeHeader(name: String*) = EnvelopeHeader(header.entries -- name)
 
     // TODO: Can we do better here ?
-    def get[T](name: String)(implicit tag: Tag[T]): Option[T] = {
-
-      val typeMatches: Map[String, Seq[String]] = Map(
-        "java.lang.Integer" -> Seq("int")
-      )
-
+    def get[T: ClassTag](name: String): Option[T] =
       header.entries.get(name) match {
         case Some(p) =>
-          val stored  = p.value.getClass().getName()
-          val desired = tag.closestClass.getName()
-          if (stored.equals(desired) || typeMatches.get(stored).map(_.contains(desired)).getOrElse(false))
-            Some(p.value.asInstanceOf[T])
-          else None
+          p.value match {
+            case v: T => Some(v)
+            case _    => None
+          }
         case _       => None
       }
-    }
   }
 }
 
@@ -118,24 +106,16 @@ final case class FlowEnvelopeMeta(
 object FlowEnvelopeMeta {
 
   implicit class FlowEnvelopeMetaSyntax(meta: FlowEnvelopeMeta) {
-    def add(k: String, v: Any)        = FlowEnvelopeMeta(meta.entries + (k -> v))
-    def get[T](k: String): Option[T]  =
+    def add(k: String, v: Any)                  = FlowEnvelopeMeta(meta.entries + (k -> v))
+    def get[T: ClassTag](k: String): Option[T]  =
       meta.entries.get(k) match {
-        case Some(m) => (Try { m.asInstanceOf[T] }).toOption
-        case _       => None
+        case Some(m: T) => Some(m)
+        case _          => None
       }
-    def getOrElse[T](k: String, d: T) = get(k).getOrElse(d)
+    def getOrElse[T: ClassTag](k: String, d: T) = get(k).getOrElse(d)
   }
 }
 
-/*
- * A flow envelope that has metadata of type M and content of type C.
- *
- * We want all envelopes to support EnvelopeHeaders, which are basically a Map[String, MsgProperty[_]].
- * When we first create an envelope, we will populate the headers with an empty map, so that we are sure
- * to always have envelope headers.
- *
- */
 final case class FlowEnvelope[C](
   meta: FlowEnvelopeMeta,
   content: C

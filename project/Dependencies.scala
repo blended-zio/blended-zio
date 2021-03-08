@@ -2,8 +2,11 @@ import sbt._
 
 object Dependencies {
 
-  val vAmq        = "5.16.0"
-  val vLogback    = "1.2.3"
+  val vAmq     = "5.16.0"
+  val vLogback = "1.2.3"
+  val vSolace  = "10.10.0"
+  val vSttp3   = "3.1.6"
+
   val vZio        = "1.0.4-2"
   val vZioConfig  = "1.0.0"
   val vZioLogging = "0.5.7"
@@ -20,13 +23,16 @@ object Dependencies {
   val zioTest     = "dev.zio" %% "zio-test"          % vZio
   val zioTestSbt  = "dev.zio" %% "zio-test-sbt"      % vZio
 
-  val amqBroker      = "org.apache.activemq"       % "activemq-broker"       % vAmq
-  val amqKahaDb      = "org.apache.activemq"       % "activemq-kahadb-store" % vAmq
-  val jms_1_1        = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1.1"
-  val logbackClassic = "ch.qos.logback"            % "logback-classic"       % vLogback
-  val logbackCore    = "ch.qos.logback"            % "logback-core"          % vLogback
-  val solJms         = "com.solacesystems"         % "sol-jms"               % "10.10.0"
-  val uzHttp         = "org.polynote"             %% "uzhttp"                % "0.2.6"
+  val amqBroker      = "org.apache.activemq"            % "activemq-broker"               % vAmq
+  val amqKahaDb      = "org.apache.activemq"            % "activemq-kahadb-store"         % vAmq
+  val argonaut       = "io.argonaut"                   %% "argonaut"                      % "6.3.3"
+  val jms_1_1        = "org.apache.geronimo.specs"      % "geronimo-jms_1.1_spec"         % "1.1.1"
+  val logbackClassic = "ch.qos.logback"                 % "logback-classic"               % vLogback
+  val logbackCore    = "ch.qos.logback"                 % "logback-core"                  % vLogback
+  val solJms         = "com.solacesystems"              % "sol-jms"                       % vSolace
+  val sttp3Core      = "com.softwaremill.sttp.client3" %% "core"                          % vSttp3
+  val sttp3Backend   = "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % vSttp3
+  val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.6"
 
   /* --- Convenient dependency groups */
 

@@ -41,10 +41,10 @@ object KeepAliveDemoApp extends App {
 
   // doctag<factory>
   private def amqCF = JmsConnectionFactory(
-    "amq:amq",
-    new ActiveMQConnectionFactory("vm://simple?create=false"),
-    3.seconds,
-    Some(JmsKeepAliveMonitor(JmsQueue("keepAlive"), 1.second, 3))
+    id = "amq:amq",
+    factory = new ActiveMQConnectionFactory("vm://simple?create=false"),
+    reconnectInterval = 3.seconds,
+    keepAlive = Some(JmsKeepAliveMonitor(JmsQueue("keepAlive"), 1.second, 3))
   )
   // end:doctag<factory>
 
