@@ -47,7 +47,7 @@ object BuildHelper {
     "-Ywarn-unused-import"
   )
 
-  private def silencerVersion = "1.7.1"
+  private def silencerVersion = "1.7.3"
 
   private def extraOptions(scalaVersion: String) =
     CrossVersion.partialVersion(scalaVersion) match {
