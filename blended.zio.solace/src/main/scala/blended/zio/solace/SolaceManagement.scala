@@ -8,6 +8,7 @@ import argonaut.Argonaut._
 
 import zio._
 import zio.blocking._
+import zio.logging._
 
 import sttp.client3._
 
@@ -26,78 +27,88 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
   def queueSubscriptions(vpn: String, queue: String) =
     getKeys(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", "subscriptionTopic")
 
-  def createSubscription(vpn: String, queue: String, subscription: String) = {
-    val subJson = jObjectFields(
-      ("msgVpnName", jString(vpn)),
-      ("queueName", jString(queue)),
-      ("subscriptionTopic", jString(subscription))
-    )
+  def createSubscription(vpn: String, queue: String, subscription: String) = for {
+    _       <- log.info(s"Creating Solace Queue Subscription [$vpn,$queue,$subscription]")
+    subJson <- ZIO.effect(
+                 jObjectFields(
+                   ("msgVpnName", jString(vpn)),
+                   ("queueName", jString(queue)),
+                   ("subscriptionTopic", jString(subscription))
+                 )
+               )
 
-    ZIO.ifM(queueSubscriptions(vpn, queue).map(_.contains(subscription)))(
-      ZIO.succeed(false),
-      performPost(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", subJson).map(_ => true)
-    )
-  }
+    res <- ZIO.ifM(queueSubscriptions(vpn, queue).map(_.contains(subscription)))(
+             ZIO.succeed(false),
+             performPost(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", subJson).map(_ => true)
+           )
+  } yield res
 
-  def disableUser(vpn: String, userName: String) = {
-    val userJson = jObjectFields(
-      ("clientUsername", jString(userName)),
-      ("enabled", jBool(false))
-    )
-
-    ZIO.ifM(clientUsernames(vpn).map(_.contains(userName)))(
-      performPut(s"msgVpns/$vpn/clientUsernames/$userName", userJson).map(_ => true),
-      ZIO.succeed(false)
-    )
-  }
+  def disableUser(vpn: String, userName: String) = for {
+    _        <- log.info(s"Disabling Solace User [$vpn,$userName]")
+    userJson <- ZIO.effect(
+                  jObjectFields(
+                    ("clientUsername", jString(userName)),
+                    ("enabled", jBool(false))
+                  )
+                )
+    res      <- ZIO.ifM(clientUsernames(vpn).map(_.contains(userName)))(
+                  performPut(s"msgVpns/$vpn/clientUsernames/$userName", userJson).map(_ => true),
+                  ZIO.succeed(false)
+                )
+  } yield res
 
   def createSolaceQueue(vpn: String, sq: SolaceManagement.SolaceQueue) = for {
-    q <- createQueue(vpn, sq.name)
-    s <- ZIO.foreach(sq.subscriptions)(sub => createSubscription(vpn, sq.name, sub))
+    q      <- createQueue(vpn, sq.name)
+    s      <- ZIO.foreach(sq.subscriptions)(sub => createSubscription(vpn, sq.name, sub))
     changed = s.fold(false)(_ || _)
   } yield q || changed
 
-  def createQueue(vpn: String, queueName: String) = {
-    val queueJson: Json = jObjectFields(
-      ("accessType", jString("non-exclusive")),
-      ("egressEnabled", jBool(true)),
-      ("ingressEnabled", jBool(true)),
-      ("msgVpnName", jString(vpn)),
-      ("permission", jString("consume")),
-      ("queueName", jString(queueName))
-    )
+  def createQueue(vpn: String, queueName: String) = for {
+    _         <- log.info(s"Creating Solace Queue [$vpn,$queueName]")
+    queueJson <- ZIO.effect(
+                   jObjectFields(
+                     ("accessType", jString("non-exclusive")),
+                     ("egressEnabled", jBool(true)),
+                     ("ingressEnabled", jBool(true)),
+                     ("msgVpnName", jString(vpn)),
+                     ("permission", jString("consume")),
+                     ("queueName", jString(queueName))
+                   )
+                 )
+    res       <- ZIO.ifM(queues(vpn).map(_.contains(queueName)))(
+                   ZIO.succeed(false),
+                   performPost(queuesOp(vpn), queueJson).map(_ => true)
+                 )
+  } yield res
 
-    ZIO.ifM(queues(vpn).map(_.contains(queueName)))(
-      ZIO.succeed(false),
-      performPost(s"msgVpns/$vpn/queues", queueJson).map(_ => true)
-    )
-  }
+  def createUsername(vpn: String, userName: String, password: String) = for {
+    _        <- log.info(s"Creating Solace User [$vpn,$userName]")
+    userJson <- ZIO.effect(
+                  jObjectFields(
+                    ("clientUsername", jString(userName)),
+                    ("enabled", jBool(true)),
+                    ("password", jString(password))
+                  )
+                )
+    res      <- ZIO.ifM(clientUsernames(vpn).map(_.contains(userName)))(
+                  ZIO.succeed(false),
+                  performPost(userNameOp(vpn), userJson)
+                )
+  } yield res
 
-  def createUsername(vpn: String, userName: String, password: String) = {
-    val userJson = jObjectFields(
-      ("clientUsername", jString(userName)),
-      ("enabled", jBool(true)),
-      ("password", jString(password))
-    )
-
-    ZIO.ifM(clientUsernames(vpn).map(_.contains(userName)))(
-      ZIO.succeed(false),
-      performPost(userNameOp(vpn), userJson)
-    )
-  }
-
-  def createJNDIConnectionFactory(vpn: String, name: String) = {
-
-    val cfJson = jObjectFields(
-      ("connectionFactoryName", jString(name)),
-      ("msgVpnName", jString(vpn))
-    )
-
-    ZIO.ifM(cfJndiNames(vpn).map(_.contains(name)))(
-      ZIO.succeed(false),
-      performPost(cfJndiOp(vpn), cfJson)
-    )
-  }
+  def createJNDIConnectionFactory(vpn: String, name: String) = for {
+    _      <- log.info(s"Binding Solace Connection Factory [$vpn,$name]")
+    cfJson <- ZIO.effect(
+                jObjectFields(
+                  ("connectionFactoryName", jString(name)),
+                  ("msgVpnName", jString(vpn))
+                )
+              )
+    res    <- ZIO.ifM(cfJndiNames(vpn).map(_.contains(name)))(
+                ZIO.succeed(false),
+                performPost(cfJndiOp(vpn), cfJson)
+              )
+  } yield res
 
   def jndiContext(url: String, user: String, password: String, vpn: String): ZManaged[Any, Throwable, NamingContext] =
     JNDISupport.create(
@@ -112,9 +123,9 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
 
   private def getKeys(operation: String, key: String): ZIO[Blocking, Throwable, List[String]] = for {
     keys <- performGet(operation)
-    res   = decodeKeys(keys, key) match {
-              case Left(s)  => throw new Exception(s)
-              case Right(v) => v
+    res  <- decodeKeys(keys, key) match {
+              case Left(s)  => ZIO.fail(new Exception(s))
+              case Right(v) => ZIO.effect(v)
             }
   } yield res
 
@@ -123,9 +134,9 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
     response <- effectBlocking {
                   basicRequest.get(uri"$url").auth.basic(conn.user, conn.password).send(backend)
                 }
-    res       = response.body match {
-                  case Right(s) => s
-                  case _        => throw new Exception(s"Operation [$operation] failed with Status code [${response.code}]")
+    res      <- response.body match {
+                  case Right(s) => ZIO.effect(s)
+                  case _        => ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}]"))
                 }
   } yield res
 
@@ -140,10 +151,10 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                     .contentType("application/json")
                     .send(backend)
                 }
-    res       = response.body match {
-                  case Right(s) => s
+    res      <- response.body match {
+                  case Right(s) => ZIO.effect(s)
                   case Left(s)  =>
-                    throw new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s")
+                    ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s"))
                 }
   } yield res
 
@@ -158,10 +169,10 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                     .contentType("application/json")
                     .send(backend)
                 }
-    res       = response.body match {
-                  case Right(s) => s
+    res      <- response.body match {
+                  case Right(s) => ZIO.succeed(s)
                   case Left(s)  =>
-                    throw new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s")
+                    ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s"))
                 }
   } yield res
 
