@@ -17,14 +17,14 @@ object SolaceMgmtDemo extends App {
     SolaceManagement.SolaceMgmtConnection("http://devel.wayofquality.de:8080", "admin", "admin")
   )
 
-  private val queues = Chunk("sample", "Q/de/9999/data/in")
-
   private val program = for {
-    _ <- ZIO.foreach(queues)(qn => solMgmt.createQueue("default", qn))
     _ <- solMgmt.disableUser("default", "default")
     _ <- solMgmt.createUsername("default", "sib", "sib123")
-    _ <- solMgmt.createSubScription("default", "Q/de/9999/data/in", "T/de/9999/data/in")
-    _ <- solMgmt.queueSubscriptions("default", "Q/de/9999/data/in")
+    _ <-
+      solMgmt.createSolaceQueue(
+        "default",
+        SolaceManagement.SolaceQueue("Q/de/9999/data/in", List("T/de/9999/data/in", "T/de/9999"))
+      )
     _ <- solMgmt.createJNDIConnectionFactory("default", "/SIBConnectionFactory")
     _ <-
       solMgmt.jndiContext("tcp://devel.wayofquality.de:55555", "sib", "sib123", "default").use { ctxt: NamingContext =>

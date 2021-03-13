@@ -26,7 +26,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
   def queueSubscriptions(vpn: String, queue: String) =
     getKeys(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", "subscriptionTopic")
 
-  def createSubScription(vpn: String, queue: String, subscription: String) = {
+  def createSubscription(vpn: String, queue: String, subscription: String) = {
     val subJson = jObjectFields(
       ("msgVpnName", jString(vpn)),
       ("queueName", jString(queue)),
@@ -50,6 +50,12 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
       ZIO.succeed(false)
     )
   }
+
+  def createSolaceQueue(vpn: String, sq: SolaceManagement.SolaceQueue) = for {
+    q <- createQueue(vpn, sq.name)
+    s <- ZIO.foreach(sq.subscriptions)(sub => createSubscription(vpn, sq.name, sub))
+    changed = s.fold(false)(_ || _)
+  } yield q || changed
 
   def createQueue(vpn: String, queueName: String) = {
     val queueJson: Json = jObjectFields(
@@ -93,15 +99,16 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
     )
   }
 
-  def jndiContext(url: String, user: String, password: String, vpn: String): ZManaged[Any, Throwable, NamingContext] = JNDISupport.create(
-    Map(
-      NamingContext.INITIAL_CONTEXT_FACTORY              -> classOf[SolJNDIInitialContextFactory].getName(),
-      NamingContext.PROVIDER_URL                         -> url,
-      NamingContext.SECURITY_PRINCIPAL                   -> s"$user@$vpn",
-      NamingContext.SECURITY_CREDENTIALS                 -> password,
-      SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME -> SupportedProperty.AUTHENTICATION_SCHEME_BASIC
+  def jndiContext(url: String, user: String, password: String, vpn: String): ZManaged[Any, Throwable, NamingContext] =
+    JNDISupport.create(
+      Map(
+        NamingContext.INITIAL_CONTEXT_FACTORY              -> classOf[SolJNDIInitialContextFactory].getName(),
+        NamingContext.PROVIDER_URL                         -> url,
+        NamingContext.SECURITY_PRINCIPAL                   -> s"$user@$vpn",
+        NamingContext.SECURITY_CREDENTIALS                 -> password,
+        SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME -> SupportedProperty.AUTHENTICATION_SCHEME_BASIC
+      )
     )
-  )
 
   private def getKeys(operation: String, key: String): ZIO[Blocking, Throwable, List[String]] = for {
     keys <- performGet(operation)
@@ -186,6 +193,11 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
 }
 
 object SolaceManagement {
+
+  final case class SolaceQueue(
+    name: String,
+    subscriptions: List[String] = List.empty
+  )
 
   final case class SolaceMgmtConnection(
     url: String,
