@@ -93,12 +93,12 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
     )
   }
 
-  def jndiContext: ZManaged[Any, Throwable, NamingContext] = JNDISupport.create(
+  def jndiContext(url: String, user: String, password: String, vpn: String): ZManaged[Any, Throwable, NamingContext] = JNDISupport.create(
     Map(
       NamingContext.INITIAL_CONTEXT_FACTORY              -> classOf[SolJNDIInitialContextFactory].getName(),
-      NamingContext.PROVIDER_URL                         -> "tcp://devel.wayofquality.de:55555",
-      NamingContext.SECURITY_PRINCIPAL                   -> "sib@default",
-      NamingContext.SECURITY_CREDENTIALS                 -> "sib123",
+      NamingContext.PROVIDER_URL                         -> url,
+      NamingContext.SECURITY_PRINCIPAL                   -> s"$user@$vpn",
+      NamingContext.SECURITY_CREDENTIALS                 -> password,
       SupportedProperty.SOLACE_JMS_AUTHENTICATION_SCHEME -> SupportedProperty.AUTHENTICATION_SCHEME_BASIC
     )
   )

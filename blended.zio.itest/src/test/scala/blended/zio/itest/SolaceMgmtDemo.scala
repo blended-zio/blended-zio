@@ -26,12 +26,13 @@ object SolaceMgmtDemo extends App {
     _ <- solMgmt.createSubScription("default", "Q/de/9999/data/in", "T/de/9999/data/in")
     _ <- solMgmt.queueSubscriptions("default", "Q/de/9999/data/in")
     _ <- solMgmt.createJNDIConnectionFactory("default", "/SIBConnectionFactory")
-    _ <- solMgmt.jndiContext.use { ctxt: NamingContext =>
-           for {
-             cf <- JNDISupport.lookup[ConnectionFactory](ctxt, "/SIBConnectionFactory")
-             _  <- putStrLn(s"Lookup of cf successful [$cf]")
-           } yield ()
-         }
+    _ <-
+      solMgmt.jndiContext("tcp://devel.wayofquality.de:55555", "sib", "sib123", "default").use { ctxt: NamingContext =>
+        for {
+          cf <- JNDISupport.lookup[ConnectionFactory](ctxt, "/SIBConnectionFactory")
+          _  <- putStrLn(s"Lookup of cf successful [$cf]")
+        } yield ()
+      }
   } yield ExitCode.success
 
   override def run(args: List[String]): URIO[ZEnv, ExitCode] =
