@@ -44,8 +44,8 @@ object JmsDemoApp extends App {
       factory = SolJmsUtility
         .createConnectionFactory(
           "devel.wayofquality.de",
-          "blended",
-          "blended123",
+          "sib",
+          "sib123",
           "default",
           new Hashtable[Any, Any]()
         ),

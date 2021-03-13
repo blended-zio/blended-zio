@@ -73,6 +73,15 @@ lazy val blendedJmx =
       libraryDependencies ++= (zioDefault ++ testDefault)
     )
 
+lazy val blendedSolace =
+  (project in file("blended.zio.solace"))
+    .settings(stdSettings("blended.zio.solace"))
+    .settings(
+      libraryDependencies ++= (zioDefault ++ testDefault),
+      libraryDependencies ++= Seq(jms_1_1, argonaut, solJms, sttp3Core, sttp3Backend)
+    )
+    .dependsOn(blendedCore)
+
 lazy val blendedStreams =
   (project in file("blended.zio.streams"))
     .settings(stdSettings("blended.zio.streams"))
@@ -86,14 +95,9 @@ lazy val blendedITest =
   (project in file("blended.zio.itest"))
     .settings(stdSettings("blended.zio.itest"))
     .settings(
-      libraryDependencies ++= (zioDefault ++ testDefault ++ Seq(
-        solJms       % Test,
-        sttp3Core    % Test,
-        sttp3Backend % Test,
-        argonaut     % Test
-      ))
+      libraryDependencies ++= (zioDefault ++ testDefault)
     )
-    .dependsOn(blendedCore, blendedStreams)
+    .dependsOn(blendedCore, blendedStreams, blendedSolace)
 
 lazy val docs = project
   .in(file("website"))
