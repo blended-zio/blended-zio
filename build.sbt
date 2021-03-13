@@ -45,6 +45,7 @@ lazy val root =
       blendedCore,
       blendedJmx,
       blendedStreams,
+      blendedSolace,
       blendedITest,
       docs
     )
@@ -113,6 +114,7 @@ lazy val docs = project
       blendedCore,
       blendedJmx,
       blendedStreams,
+      blendedSolace,
       blendedActiveMq,
       blendedITest
     ),
