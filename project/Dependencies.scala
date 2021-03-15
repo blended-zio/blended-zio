@@ -8,8 +8,8 @@ object Dependencies {
   val vSttp3   = "3.1.6"
 
   val vZio        = "1.0.5"
-  val vZioConfig  = "1.0.0"
-  val vZioLogging = "0.5.7"
+  val vZioConfig  = "1.0.1"
+  val vZioLogging = "0.5.8"
   val vZioNio     = "1.0.0-RC9"
 
   // Dependencies
