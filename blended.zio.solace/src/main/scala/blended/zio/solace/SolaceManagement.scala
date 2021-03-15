@@ -7,6 +7,7 @@ import argonaut._
 import argonaut.Argonaut._
 
 import zio._
+import zio.duration._
 import zio.blocking._
 import zio.logging._
 
@@ -121,7 +122,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
       )
     )
 
-  private def getKeys(operation: String, key: String): ZIO[Blocking, Throwable, List[String]] = for {
+  private def getKeys(operation: String, key: String) = for {
     keys <- performGet(operation)
     res  <- decodeKeys(keys, key) match {
               case Left(s)  => ZIO.fail(new Exception(s))
@@ -129,19 +130,26 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
             }
   } yield res
 
-  private def performGet(operation: String): ZIO[Blocking, Throwable, String] = for {
+  private def performGet(operation: String) = retry(for {
     url      <- sempUrl(operation)
+    _        <- log.info(s"Performing GET from [$url]")
     response <- effectBlocking {
                   basicRequest.get(uri"$url").auth.basic(conn.user, conn.password).send(backend)
                 }
     res      <- response.body match {
-                  case Right(s) => ZIO.effect(s)
-                  case _        => ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}]"))
+                  case Right(s) => ZIO.effect(s) <* log.info(s"GET from [$url] succeeded.")
+                  case _        =>
+                    for {
+                      msg <- ZIO.effect(s"Get from [$url] failed with Status code [${response.code}]")
+                      _   <- log.warn(msg)
+                      _   <- ZIO.fail(new Exception(msg))
+                    } yield ""
                 }
-  } yield res
+  } yield res)
 
-  private def performPut(operation: String, json: Json) = for {
+  private def performPut(operation: String, json: Json) = retry(for {
     url      <- sempUrl(operation)
+    _        <- log.info(s"Executing put to [$url]")
     response <- effectBlocking {
                   basicRequest
                     .put(uri"$url")
@@ -152,14 +160,19 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                     .send(backend)
                 }
     res      <- response.body match {
-                  case Right(s) => ZIO.effect(s)
+                  case Right(s) => ZIO.effect(s) <* log.info(s"Put to [$url] succeeded")
                   case Left(s)  =>
-                    ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s"))
+                    for {
+                      msg <- ZIO.effect(s"Operation [$operation] failed with Status code [${response.code}] : $s")
+                      _   <- log.warn(msg)
+                      _   <- ZIO.fail(new Exception(msg))
+                    } yield ""
                 }
-  } yield res
+  } yield res)
 
-  private def performPost(operation: String, json: Json) = for {
+  private def performPost(operation: String, json: Json) = retry(for {
     url      <- sempUrl(operation)
+    _        <- log.info(s"Executing post to [$url]")
     response <- effectBlocking {
                   basicRequest
                     .post(uri"$url")
@@ -170,12 +183,17 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                     .send(backend)
                 }
     res      <- response.body match {
-                  case Right(s) => ZIO.succeed(s)
+                  case Right(s) => log.info(s"Post to [$url] succeeded") <* ZIO.succeed(s)
                   case Left(s)  =>
-                    ZIO.fail(new Exception(s"Operation [$operation] failed with Status code [${response.code}] : $s"))
+                    for {
+                      msg <- ZIO.effect(s"Post to [$url] failed with Status code [${response.code}] : $s")
+                      _   <- log.warn(msg)
+                      _   <- ZIO.fail(new Exception(msg))
+                    } yield ""
                 }
-  } yield res
+  } yield res)
 
+  // Utility method to decode a list of identifying keys from a SEMP v2
   private def decodeKeys(s: String, key: String) =
     Parse
       .parse(s)
@@ -197,10 +215,13 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
   private val userNameOp: String => String = vpn => s"msgVpns/${encode(vpn)}/clientUsernames"
   private val queuesOp: String => String   = vpn => s"msgVpns/${encode(vpn)}/queues"
   private val cfJndiOp: String => String   = vpn => s"msgVpns/${encode(vpn)}/jndiConnectionFactories"
-
-  private val encode: String => String = s => URLEncoder.encode(s, "UTF-8")
+  private val encode: String => String     = s => URLEncoder.encode(s, "UTF-8")
 
   private lazy val backend = HttpURLConnectionBackend()
+
+  private def retry[R, E, A](effect: ZIO[R, E, A]) = effect.retry(
+    Schedule.recurs(5) && Schedule.spaced(1.second)
+  )
 }
 
 object SolaceManagement {
