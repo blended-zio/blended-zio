@@ -78,14 +78,15 @@ object BuildHelper {
       crossScalaVersions := Seq(Scala213),
       scalaVersion in ThisBuild := ScalaDefault,
       scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-      skip.in(publish) := false,
+      publish / skip := false,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
       libraryDependencies ++=
         Seq(
           compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
         ) ++ extraDeps(scalaVersion.value),
       incOptions ~= (_.withLogRecompileOnMacro(false)),
-      parallelExecution in Test := false
+      Test / fork := true,
+      Test / parallelExecution := false
     )
 
   private def extraDeps(scVersion: String) =

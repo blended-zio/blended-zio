@@ -44,6 +44,7 @@ lazy val root =
       blendedActiveMq,
       blendedCore,
       blendedJmx,
+      blendedJolokia,
       blendedStreams,
       blendedSolace,
       blendedITest,
@@ -62,7 +63,7 @@ lazy val blendedCore =
     .settings(stdSettings("blended.zio.core"))
     .settings(
       libraryDependencies ++= (zioDefault ++ testDefault),
-      libraryDependencies += zioConfig
+      libraryDependencies ++= Seq(zioConfig, argonaut)
     )
 
 lazy val blendedJmx =
@@ -73,6 +74,16 @@ lazy val blendedJmx =
     .settings(
       libraryDependencies ++= (zioDefault ++ testDefault)
     )
+
+lazy val blendedJolokia =
+  (project in file("blended.zio.jolokia"))
+    .settings(
+      stdSettings("blended.zio.jolokia")
+    )
+    .settings(
+      libraryDependencies ++= (zioDefault ++ testDefault) ++ Seq(argonaut, sttp3Core, sttp3Backend)
+    )
+    .dependsOn(blendedCore)
 
 lazy val blendedSolace =
   (project in file("blended.zio.solace"))
@@ -113,6 +124,7 @@ lazy val docs = project
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
       blendedCore,
       blendedJmx,
+      blendedJolokia,
       blendedStreams,
       blendedSolace,
       blendedActiveMq,

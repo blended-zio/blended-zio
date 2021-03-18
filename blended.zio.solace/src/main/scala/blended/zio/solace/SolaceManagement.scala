@@ -18,6 +18,7 @@ import SolaceManagement.SolaceMgmtConnection
 import blended.zio.core.jndi.JNDISupport
 import com.solacesystems.jndi.SolJNDIInitialContextFactory
 import com.solacesystems.jms.SupportedProperty
+import blended.zio.core.json.JsonSupport
 
 class SolaceManagement(conn: SolaceMgmtConnection) {
 
@@ -111,7 +112,12 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
               )
   } yield res
 
-  def jndiContext(url: String, user: String, password: String, vpn: String): ZManaged[Any, Throwable, NamingContext] =
+  def jndiContext(
+    url: String,
+    user: String,
+    password: String,
+    vpn: String
+  ): ZManaged[Logging, Throwable, NamingContext] =
     JNDISupport.create(
       Map(
         NamingContext.INITIAL_CONTEXT_FACTORY              -> classOf[SolJNDIInitialContextFactory].getName(),
@@ -124,10 +130,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
 
   private def getKeys(operation: String, key: String) = for {
     keys <- performGet(operation)
-    res  <- decodeKeys(keys, key) match {
-              case Left(s)  => ZIO.fail(new Exception(s))
-              case Right(v) => ZIO.effect(v)
-            }
+    res  <- decodeKeys(keys, key)
   } yield res
 
   private def performGet(operation: String) = retry(for {
@@ -137,7 +140,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                   basicRequest.get(uri"$url").auth.basic(conn.user, conn.password).send(backend)
                 }
     res      <- response.body match {
-                  case Right(s) => ZIO.effect(s) <* log.info(s"GET from [$url] succeeded.")
+                  case Right(s) => ZIO.effect(s) <* log.info(s"GET from [$url] succeeded.") <* log.debug(s)
                   case _        =>
                     for {
                       msg <- ZIO.effect(s"Get from [$url] failed with Status code [${response.code}]")
@@ -194,21 +197,11 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
   } yield res)
 
   // Utility method to decode a list of identifying keys from a SEMP v2
-  private def decodeKeys(s: String, key: String) =
-    Parse
-      .parse(s)
-      .fold(Left(_), json => Right(json.field("data")))
-      .fold(
-        Left(_),
-        data =>
-          data match {
-            case None    => Left(s"Could not decode list of [$key]")
-            case Some(d) => Right(d.arrayOrEmpty)
-          }
-      )
-      .fold(Left(_), entries => Right(entries.map(_.field(key))))
-      .fold(Left(_), entries => Right(entries.collect { case Some(s) => s }))
-      .fold(Left(_), entries => Right(entries.map(_.stringOrEmpty)))
+  def decodeKeys(s: String, key: String) = for {
+    json <- ZIO.fromEither(Parse.parse(s)).mapError(s => new Exception(s))
+    data <- JsonSupport.extract(json, "data").map(_.arrayOrEmpty)
+    keys     = data.map(_.field(key).map(_.stringOrEmpty).getOrElse("")).filter(s => !s.isEmpty())
+  } yield Chunk.fromIterable(keys)
 
   private val sempUrl: String => ZIO[Any, Nothing, String] = op => ZIO.succeed(s"${conn.sempv2Base}/$op")
 
