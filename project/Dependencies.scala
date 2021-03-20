@@ -3,6 +3,7 @@ import sbt._
 object Dependencies {
 
   val vAmq     = "5.16.0"
+  val vJolokia = "1.6.2"
   val vLogback = "1.2.3"
   val vSolace  = "10.10.0"
   val vSttp3   = "3.1.6"
@@ -26,6 +27,8 @@ object Dependencies {
   val amqBroker      = "org.apache.activemq"            % "activemq-broker"               % vAmq
   val amqKahaDb      = "org.apache.activemq"            % "activemq-kahadb-store"         % vAmq
   val argonaut       = "io.argonaut"                   %% "argonaut"                      % "6.3.3"
+  val jolokiaJvm     = "org.jolokia"                    % "jolokia-jvm"                   % vJolokia
+  val jolokiaAgent   = jolokiaJvm.classifier("agent")
   val jms_1_1        = "org.apache.geronimo.specs"      % "geronimo-jms_1.1_spec"         % "1.1.1"
   val logbackClassic = "ch.qos.logback"                 % "logback-classic"               % vLogback
   val logbackCore    = "ch.qos.logback"                 % "logback-core"                  % vLogback

@@ -12,6 +12,13 @@ import scala.util._
 import JolokiaObject._
 import java.net.URLEncoder
 
+trait JolokiaClient {
+  def version: ZIO[Logging with Blocking, Throwable, JolokiaVersion]
+  def search(searchDef: MBeanSearchDef): ZIO[Logging with Blocking, Throwable, JolokiaSearchResult]
+  def read(name: String): ZIO[Logging with Blocking, Throwable, JolokiaReadResult]
+  def exec(execDef: OperationExecDef): ZIO[Logging with Blocking, Throwable, JolokiaExecResult]
+}
+
 object JolokiaClient {
 
   final case class JolokiaAddress(
@@ -20,7 +27,17 @@ object JolokiaClient {
     password: Option[String] = None
   )
 
-  class JolokiaClient(address: JolokiaAddress) {
+  def create(address: JolokiaAddress): ZManaged[Any, Nothing, JolokiaClient] = ZManaged.make(ZIO.effectTotal {
+    val impl = new JolokiaClientImpl(address)
+    new JolokiaClient() {
+      override def version                    = impl.version
+      override def search(sd: MBeanSearchDef) = impl.search(sd)
+      override def read(name: String)         = impl.read(name)
+      override def exec(ed: OperationExecDef) = impl.exec(ed)
+    }
+  })(_ => ZIO.unit)
+
+  private class JolokiaClientImpl(address: JolokiaAddress) {
 
     val version = for {
       json <- performGet("version")

@@ -81,7 +81,18 @@ lazy val blendedJolokia =
       stdSettings("blended.zio.jolokia")
     )
     .settings(
-      libraryDependencies ++= (zioDefault ++ testDefault) ++ Seq(argonaut, sttp3Core, sttp3Backend)
+      libraryDependencies ++= (zioDefault ++ testDefault) ++ Seq(
+        argonaut, 
+        sttp3Core, 
+        sttp3Backend,
+        jolokiaAgent % Runtime
+      ),
+      Test / Keys.javaOptions += {
+        val jarFile = (Test / Keys.dependencyClasspathAsJars).value.map(_.data).find{ f => 
+          f.getName().startsWith("jolokia-jvm-")
+        }.get
+        s"-javaagent:$jarFile=port=0,host=localhost"
+      }
     )
     .dependsOn(blendedCore)
 

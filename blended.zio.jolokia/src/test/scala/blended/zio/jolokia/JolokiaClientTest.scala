@@ -1,88 +1,78 @@
 package blended.zio.jolokia
 
 import zio._
+import zio.logging._
+
 import zio.duration._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import JolokiaClient._
 
 object JolokiaClientTest extends DefaultRunnableSpec {
 
-  override def spec = suite("The Jolokia client should")(
-    connect
-  ) @@ timed @@ timeoutWarning(1.minute) @@ parallel
+  private val logLayer = Logging.console(
+    logLevel = LogLevel.Info,
+    format = LogFormat.ColoredLogFormat()
+  ) >>> Logging.withRootLoggerName(getClass().getSimpleName())
+
+  override def spec = (suite("The Jolokia client should")(
+    connect,
+    searchByDomain,
+    searchComplete,
+    read,
+    exec
+  ) @@ timed @@ timeoutWarning(1.minute)).provideCustomLayer(logLayer)
 
   private val connect = testM("Connect to Jolokia")(for {
-    _ <- ZIO.effectTotal(println("Boom"))
-  } yield assert(true)(equalTo(false)))
+    address <- good
+    version <- JolokiaClient.create(address).use { client =>
+                 client.version
+               }
+    _       <- log.debug(s"$version")
+  } yield assert(version.agent)(equalTo("1.6.2")))
+
+  private val searchByDomain = testM("Allow to search for MBeans by domain only")(for {
+    address <- good
+    mbeans  <- JolokiaClient.create(address).use { client =>
+                 client.search(MBeanSearchDef("java.lang"))
+               }
+    _       <- log.debug(s"$mbeans")
+  } yield assert(mbeans.mbeanNames.isEmpty)(isFalse))
+
+  private val searchComplete = testM("Allow to search for MBeans by domain and properties")(for {
+    address <- good
+    mbeans  <- JolokiaClient.create(address).use { client =>
+                 client.search(MBeanSearchDef("java.lang"))
+               }
+    _       <- log.debug(s"$mbeans")
+  } yield assert(mbeans.mbeanNames.isEmpty)(isFalse))
+
+  private val read = testM("Allow to read a specific MBean")(for {
+    address <- good
+    mBean   <- JolokiaClient.create(address).use { client =>
+                 client.read("java.lang:type=Memory")
+               }
+    _       <- log.debug(s"$mBean")
+  } yield assert(mBean.objectName)(equalTo("java.lang:type=Memory")))
+
+  private val exec = testM("Allow to execute a given operation on a MBean")(
+    for {
+      address <- good
+      res     <- JolokiaClient.create(address).use { client =>
+                   client.exec(
+                     OperationExecDef(
+                       objectName = "java.lang:type=Threading",
+                       operationName = "dumpAllThreads(boolean,boolean)",
+                       parameters = List("true", "true")
+                     )
+                   )
+                 }
+      _       <- log.debug(s"$res")
+    } yield assert(res.objectName)(equalTo("java.lang:type=Threading")) &&
+      assert(res.operationName)(equalTo("dumpAllThreads(boolean,boolean)"))
+  )
+
+  private val good =
+    ZIO.effectTotal(System.getProperty("jolokia.agent")).map(s => JolokiaAddress(s))
 }
-
-// package blended.jolokia
-
-// import blended.testsupport.BlendedTestSupport
-// import org.scalatest.matchers.should.Matchers
-// import org.scalatest.wordspec.AnyWordSpec
-
-// class JolokiaClientSpec extends AnyWordSpec
-//   with Matchers {
-
-//   private val good = {
-//     val url = System.getProperty("jolokia.agent")
-//     new JolokiaClient(JolokiaAddress(jolokiaUrl = url))
-//   }
-
-//   private val bad = {
-//     // Choose a port that is currently not in use
-//     new JolokiaClient(JolokiaAddress(
-//       jolokiaUrl = s"http://localhost:${BlendedTestSupport.freePort}/jolokia"
-//     ))
-//   }
-
-//   "The Jolokia client" should {
-
-//     "Connect to Jolokia" in {
-//       good.version.get
-//     }
-
-//     "Allow to search for MBeans by domain only" in {
-//       val result : JolokiaSearchResult = good.search(MBeanSearchDef(
-//         jmxDomain = "java.lang"
-//       )).get
-
-//       assert(result.mbeanNames.nonEmpty)
-//     }
-
-//     "Allow to search for MBeans by domain and properties" in {
-
-//       val result : JolokiaSearchResult = good.search(MBeanSearchDef(
-//         jmxDomain = "java.lang",
-//         searchProperties = Map("type" -> "Memory")
-//       )).get
-
-//       assert(result.mbeanNames.nonEmpty)
-//     }
-
-//     "Allow to read a specific MBean" in {
-//       good.read("java.lang:type=Memory").get
-//     }
-
-//     "Allow to execute a given operation on a MBean" in {
-
-//       val result : JolokiaExecResult = good.exec(OperationExecDef(
-//         objectName = "java.lang:type=Threading",
-//         operationName = "dumpAllThreads(boolean,boolean)",
-//         parameters = List("true", "true")
-//       )).get
-
-//       assert(result.objectName == "java.lang:type=Threading")
-//       assert(result.operationName == "dumpAllThreads(boolean,boolean)")
-//     }
-
-//     "Respond with a failure if the rest call fails" in {
-
-//       intercept[Exception] {
-//         bad.version.get
-//       }
-//     }
-//   }
-// }
