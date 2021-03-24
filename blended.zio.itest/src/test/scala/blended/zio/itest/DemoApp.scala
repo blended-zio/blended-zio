@@ -1,4 +1,4 @@
-package blended.zio.streams
+package blended.zio.itest
 
 import zio._
 import zio.duration._

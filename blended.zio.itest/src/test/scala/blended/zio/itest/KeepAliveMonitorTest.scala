@@ -1,4 +1,4 @@
-package blended.zio.streams
+package blended.zio.itest
 
 import zio.test.DefaultRunnableSpec
 
@@ -11,6 +11,8 @@ import zio.logging.slf4j._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+
+import blended.zio.streams._
 
 object KeepAliveMonitorTest extends DefaultRunnableSpec {
 

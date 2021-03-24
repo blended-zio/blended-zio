@@ -16,7 +16,7 @@ object AckHandler {
     override def deny(env: FlowEnvelope[_]) = ZIO.unit
   }
 
-  implicit def toEnvelopeMeta[R, E, A](ah: AckHandler): EnvelopeMeta[AckHandler] =
+  implicit def toEnvelopeMeta(ah: AckHandler): EnvelopeMeta[AckHandler] =
     EnvelopeMeta[AckHandler](
       "ackHandler",
       ah,

@@ -7,6 +7,9 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 
+import blended.zio.itest.EnvelopeAssertion._
+
+import blended.zio.streams._
 import MsgProperty._
 
 object FlowEnvelopeTest extends DefaultRunnableSpec {
@@ -31,16 +34,19 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
   }
 
   private val simpleHeader = test("allow to set and get a simple header") {
-    val s    = "Hello Andreas"
-    val env  = FlowEnvelope.make(s).addHeader(EnvelopeHeader(Map("foo" -> "bar")))
-    val env2 = env.eraseMeta(EnvelopeHeader.empty)
+    val s          = "Hello Andreas"
+    val env        = FlowEnvelope
+      .make(s)
+      .addHeader(EnvelopeHeader(Map("foo" -> "bar")))
 
-    val lookupOk   = env.header.get[String]("foo")
-    val lookupFail = env.header.get[Int]("foo")
-
-    assert(lookupOk)(equalTo(Right("bar"))) && assert(lookupFail)(
+    val lookupOk   = assert(env)(hasHeader("foo", "bar"))
+    val lookupFail = assert(env.header.get[Int]("foo"))(
       equalTo(Left(HeaderException.HeaderUnexpectedType("foo", classOf[Int].getName(), classOf[String].getName())))
-    ) && assert(env2.header.entries)(isEmpty)
+    )
+
+    val erased = assert(env.eraseMeta(EnvelopeHeader.empty).header.entries)(isEmpty)
+
+    lookupOk && lookupFail && erased
   }
 
   private val zip = test("allow to zip some envelopes") {
@@ -52,8 +58,6 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
     val env3 = FlowEnvelope.make(2.0)
 
     val env = env1.zip(env2).zip(env3)
-
-    println(env)
 
     val lookup1 = env.header.get[String]("foo")
     val lookup2 = env.header.get[Int]("prop")
@@ -83,5 +87,4 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
       acked <- ref.get
     } yield assert(acked)(isTrue)
   )
-
 }

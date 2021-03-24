@@ -1,4 +1,4 @@
-package blended.zio.streams
+package blended.zio.itest
 
 import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
@@ -15,6 +15,7 @@ import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
 
+import blended.zio.streams._
 import blended.zio.streams.jms._
 import JmsApi._
 import JmsApiObject._

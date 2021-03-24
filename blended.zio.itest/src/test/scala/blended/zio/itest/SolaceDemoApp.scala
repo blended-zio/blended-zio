@@ -1,4 +1,4 @@
-package blended.zio.streams
+package blended.zio.itest
 
 import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
@@ -12,13 +12,15 @@ import zio.logging.slf4j._
 
 import zio.stream.ZStream
 
+import com.solacesystems.jms.SolJmsUtility
+
+import blended.zio.streams._
 import blended.zio.streams.jms._
 import JmsApi._
 import JmsApiObject._
 import JmsDestination._
-import com.solacesystems.jms.SolJmsUtility
 
-object JmsDemoApp extends App {
+object SolaceDemoApp extends App {
 
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 

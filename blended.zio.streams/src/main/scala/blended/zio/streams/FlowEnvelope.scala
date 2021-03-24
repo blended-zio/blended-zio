@@ -2,15 +2,20 @@ package blended.zio.streams
 
 import zio._
 import blended.zio.core.Zipped._
+import java.util.UUID
 
 final case class FlowEnvelope[+C](
   meta: EnvelopeMetaMap,
   content: C
 ) { self =>
 
-  /**
-   * Simply map the content of the FlowEnvelope by mapping the envelope content and keep the Metadata
-   */
+  override def equals(that: Any): Boolean = that match {
+    case that: FlowEnvelope[C] => self.content == that.content
+    case _                     => false
+  }
+
+  override def hashCode() = content.hashCode()
+
   def map[C1](f: C => C1) = FlowEnvelope[C1](meta, f(content))
 
   def zip[C1](that: FlowEnvelope[C1])(implicit z: Zippable[C, C1]): FlowEnvelope[z.Out] =
@@ -35,7 +40,6 @@ final case class FlowEnvelope[+C](
     val ah = meta.get[AckHandler](AckHandler.noop)
     ah.ack(self).catchAll(_ => ah.deny(self))
   }
-
 }
 
 object FlowEnvelope {
@@ -49,5 +53,20 @@ object FlowEnvelope {
    * Run an effect to produce some content and then create an envelope from the result
    */
   def fromEffect[R, E, C](e: ZIO[R, E, C]) = e.map(make)
+}
 
+object EnvelopeId {
+
+  type EnvelopeIdService = Has[Service]
+
+  def default: ZLayer[Any, Nothing, EnvelopeIdService] =
+    ZLayer.fromEffect(ZIO.effectTotal(new DefaultEnvelopeIdService))
+
+  trait Service {
+    def nextId: ZIO[Any, Nothing, String]
+  }
+
+  private class DefaultEnvelopeIdService extends Service {
+    override def nextId: ZIO[Any, Nothing, String] = ZIO.effectTotal(UUID.randomUUID().toString())
+  }
 }

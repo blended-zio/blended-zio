@@ -29,8 +29,6 @@ object MsgProperty {
   implicit def dbl2Prop(d: Double)    = DoubleMsgProperty(d)
   implicit def string2Prop(s: String) = StringMsgProperty(s)
 
-  implicit def int2Prop(i: Integer) = IntMsgProperty(i)
-
   def make(v: Any): Option[MsgProperty[_]] = v match {
     case b: Boolean => Some(b)
     case b: Byte    => Some(b)
