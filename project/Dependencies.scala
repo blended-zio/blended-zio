@@ -29,7 +29,7 @@ object Dependencies {
   val logbackClassic = "ch.qos.logback" % "logback-classic" % vLogback
   val logbackCore    = "ch.qos.logback" % "logback-core"    % vLogback
 
-  val uzHttp = "org.polynote" %% "uzhttp" % "0.2.6"
+  val uzHttp = "org.polynote" %% "uzhttp" % "0.2.7"
 
   /* --- Convenient dependency groups */
 
