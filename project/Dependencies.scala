@@ -9,7 +9,7 @@ object Dependencies {
   val vSttp3   = "3.1.6"
 
   val vZio        = "1.0.5"
-  val vZioConfig  = "1.0.1"
+  val vZioConfig  = "1.0.2"
   val vZioLogging = "0.5.8"
   val vZioNio     = "1.0.0-RC9"
 
@@ -35,7 +35,7 @@ object Dependencies {
   val solJms         = "com.solacesystems"              % "sol-jms"                       % vSolace
   val sttp3Core      = "com.softwaremill.sttp.client3" %% "core"                          % vSttp3
   val sttp3Backend   = "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % vSttp3
-  val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.6"
+  val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.7"
 
   /* --- Convenient dependency groups */
 
