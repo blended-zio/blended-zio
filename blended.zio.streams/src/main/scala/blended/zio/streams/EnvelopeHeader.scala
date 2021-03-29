@@ -71,9 +71,9 @@ object EnvelopeHeader {
 
   val empty = EnvelopeHeader()
 
-  implicit def asEnvelopeMeta(eh: EnvelopeHeader): EnvelopeMeta[EnvelopeHeader] = EnvelopeMeta[EnvelopeHeader](
+  val key: EnvelopeMeta[EnvelopeHeader] = EnvelopeMeta[EnvelopeHeader](
     id = "header",
-    init = eh,
+    init = empty,
     comb = (h1: EnvelopeHeader, h2: EnvelopeHeader) => h1 ++ h2
   )
 }

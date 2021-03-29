@@ -10,7 +10,7 @@ import blended.zio.streams.FlowEnvelope
 import JmsApiObject._
 import JmsApi._
 
-private[jms] object RecoveringJmsSink {
+object RecoveringJmsSink {
 
   def make[T](
     cf: JmsConnectionFactory,

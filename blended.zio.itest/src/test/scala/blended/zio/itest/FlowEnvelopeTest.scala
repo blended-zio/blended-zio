@@ -44,7 +44,7 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
       equalTo(Left(HeaderException.HeaderUnexpectedType("foo", classOf[Int].getName(), classOf[String].getName())))
     )
 
-    val erased = assert(env.eraseMeta(EnvelopeHeader.empty).header.entries)(isEmpty)
+    val erased = assert(env.eraseMeta(EnvelopeHeader.key).header.entries)(isEmpty)
 
     lookupOk && lookupFail && erased
   }
@@ -76,7 +76,7 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
                  FlowEnvelope
                    .make("Hello Ack")
                    .withMeta[AckHandler](
-                     AckHandler.noop,
+                     AckHandler.key,
                      new AckHandler {
                        override def ack(env: FlowEnvelope[_])  = ref.set(true)
                        override def deny(env: FlowEnvelope[_]) = ZIO.unit

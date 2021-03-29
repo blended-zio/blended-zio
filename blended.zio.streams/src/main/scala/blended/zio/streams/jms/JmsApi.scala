@@ -21,12 +21,10 @@ object JmsApi {
   type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
   type JmsEncoder[T] = JmsProducer => FlowEnvelope[T] => ZIO[Blocking, JMSException, Message]
 
-  val defaultJmsEnv: ZLayer[Any, Nothing, Logging] => ZLayer[
-    Any,
-    Nothing,
-    Logging with JmsConnectionManagerService with RuntimeIdService
-  ] =
-    logging => logging ++ JmsConnectionManager.default ++ RuntimeId.default
+  def defaultJmsEnv[R, E](
+    logging: ZLayer[R, E, Logging]
+  ): ZLayer[R, E, Logging with JmsConnectionManagerService with RuntimeIdService] =
+    logging ++ JmsConnectionManager.default ++ RuntimeId.default
 
   val stringEnvelopeEncoder: JmsEncoder[String] = p =>
     s =>

@@ -38,15 +38,11 @@ object JmsConnectionManager {
 
   private val makeService: ZIO[Any, Nothing, Service] = for {
     cons <- Ref.make(Map.empty[String, JmsConnection])
-    rec  <- Ref.make(List.empty[String])
+    rec  <- Ref.make[Chunk[String]](Chunk.empty)
     s    <- Semaphore.make(1)
   } yield {
 
-    val conMgr = new DefaultConnectionManager {
-      override private[jms] val conns      = cons
-      override private[jms] val recovering = rec
-      override private[jms] val sem        = s
-    }
+    val conMgr = new DefaultConnectionManager(rec, cons, s)
 
     new Service {
       override def connect(
@@ -71,14 +67,14 @@ object JmsConnectionManager {
   /**
    * A connection factory which reuses the underlying JMS connection as much as possible.
    */
-  sealed abstract private class DefaultConnectionManager {
-
+  private class DefaultConnectionManager(
     // Keep a list of connection id's currently in recovery
-    private[jms] val recovering: Ref[List[String]]
+    recovering: Ref[Chunk[String]],
     // Keep a map of current connections keyed by their connection id's
-    private[jms] val conns: Ref[Map[String, JmsConnection]]
+    conns: Ref[Map[String, JmsConnection]],
     // A semaphore to access the stored connections
-    private[jms] val sem: Semaphore
+    sem: Semaphore
+  ) {
 
     // Just the key to find the desired connection in the cached connections
     private val conCacheId: JmsConnectionFactory => String => String = cf => clientId => s"${cf.id}-$clientId"
@@ -149,7 +145,7 @@ object JmsConnectionManager {
             log.debug(
               s"Beginning recovery period for [$cid]" + t.map(c => s" , cause [${c.getMessage}]").getOrElse("")
             )
-          _ <- recovering.update(r => cid :: r)
+          _ <- recovering.update(r => cid +: r)
           _ <- recovering.update(_.filterNot(_ == cid)).schedule(Schedule.duration(cf.reconnectInterval))
           _ <- log.debug(s"Ending recovery period for [$cid]")
         } yield ()

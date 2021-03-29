@@ -1,7 +1,5 @@
 package blended.zio.streams
 
-import scala.language.implicitConversions
-
 import zio._
 
 trait AckHandler {
@@ -16,10 +14,10 @@ object AckHandler {
     override def deny(env: FlowEnvelope[_]) = ZIO.unit
   }
 
-  implicit def toEnvelopeMeta(ah: AckHandler): EnvelopeMeta[AckHandler] =
+  val key: EnvelopeMeta[AckHandler] =
     EnvelopeMeta[AckHandler](
       "ackHandler",
-      ah,
+      noop,
       (ah1: AckHandler, ah2: AckHandler) =>
         new AckHandler {
           override def ack(env: FlowEnvelope[_])  = ah1.ack(env).flatMap(_ => ah2.ack(env))

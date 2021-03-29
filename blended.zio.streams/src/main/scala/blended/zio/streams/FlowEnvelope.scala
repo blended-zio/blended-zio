@@ -25,19 +25,19 @@ final case class FlowEnvelope[+C](
 
   def withMeta[V](k: EnvelopeMeta[V], v: V) = FlowEnvelope(meta.withMeta(k, v), content)
 
-  def header: EnvelopeHeader = meta.get[EnvelopeHeader](EnvelopeHeader.empty)
+  def header: EnvelopeHeader = meta.get[EnvelopeHeader](EnvelopeHeader.key)
 
   def addHeader(newHeader: EnvelopeHeader) =
-    FlowEnvelope(meta.update[EnvelopeHeader](EnvelopeHeader.empty, _ ++ newHeader), content)
+    FlowEnvelope(meta.update[EnvelopeHeader](EnvelopeHeader.key, _ ++ newHeader), content)
 
   def removeHeader(names: String*) =
-    FlowEnvelope(meta.update[EnvelopeHeader](EnvelopeHeader.empty, _ -- (names: _*)), content)
+    FlowEnvelope(meta.update[EnvelopeHeader](EnvelopeHeader.key, _ -- (names: _*)), content)
 
   def replaceHeader(newHeader: EnvelopeHeader) =
-    FlowEnvelope(meta.overwrite[EnvelopeHeader](EnvelopeHeader.empty, newHeader), content)
+    FlowEnvelope(meta.overwrite[EnvelopeHeader](EnvelopeHeader.key, newHeader), content)
 
   def ackOrDeny = {
-    val ah = meta.get[AckHandler](AckHandler.noop)
+    val ah = meta.get[AckHandler](AckHandler.key)
     ah.ack(self).catchAll(_ => ah.deny(self))
   }
 }

@@ -9,7 +9,7 @@ import JmsApiObject._
 import JmsApi._
 import blended.zio.streams.FlowEnvelope
 
-private[jms] object RecoveringJmsStream {
+object RecoveringJmsStream {
 
   def make(
     cf: JmsConnectionFactory,
