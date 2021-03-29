@@ -6,20 +6,20 @@ import zio._
 import zio.logging._
 import zio.blocking._
 import zio.stream._
-import zio.duration.Duration
-
-import blended.zio.core.RuntimeId
-import RuntimeId.RuntimeIdService
+import zio.duration._
 
 import JmsConnectionManager._
 import JmsDestination._
 import JmsApiObject._
+
+import blended.zio.core.RuntimeId
+import RuntimeId.RuntimeIdService
 import blended.zio.streams.FlowEnvelope
 
 object JmsApi {
 
   type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
-  type JmsEncoder[T] = JmsProducer => FlowEnvelope[T] => ZIO[Blocking, JMSException, Message]
+  type JmsEncoder[T] = JmsProducer => FlowEnvelope[_, T] => ZIO[Blocking, JMSException, Message]
 
   def defaultJmsEnv[R, E](
     logging: ZLayer[R, E, Logging]
@@ -30,12 +30,12 @@ object JmsApi {
     s =>
       effectBlocking {
         p.session.session.createTextMessage(s.content)
-      }.refineOrDie { case je: JMSException => je }
+      }.mapError(mapException)
 
   def connect(
     cf: JmsConnectionFactory,
     clientId: String
-  )                                             = for {
+  ) = for {
     mgr <- ZIO.service[JmsConnectionManager.Service]
     con <- mgr.connect(cf, clientId)
   } yield con
@@ -48,17 +48,20 @@ object JmsApi {
     _   <- mgr.reconnect(con, cause)
   } yield ()
 
-  def createSession(con: JmsConnection) = ZManaged.make((for {
-    rid <- ZIO.service[RuntimeId.Service]
-    js  <- effectBlocking(
-             con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
-           )
-    id  <- rid.nextId(con.id)
-    s    = JmsSession(con, s"S-$id", js)
-  } yield s).refineOrDie { case t: JMSException => t })(s =>
+  def createSession(con: JmsConnection) = ZManaged.make(
+    (for {
+      rid <- ZIO.service[RuntimeId.Service]
+      js  <- effectBlocking(
+               con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
+             )
+      id  <- rid.nextId(con.id)
+      s    = JmsSession(con, s"S-$id", js)
+      _   <- log.debug(s"Created JMS Session [$s]")
+    } yield s).mapError(mapException)
+  )(s =>
     for {
-      _ <- log.debug(s"Closing JMS Session [$s]")
-      _ <- effectBlocking(s.session.close()).orDie
+      _ <- log.debug(s"Closing JMS Session [$s")
+      _ <- effectBlocking(s.session.close()).catchAll(t => logException(s"Error closing JMS session [$s]", t))
     } yield ()
   )
 
@@ -67,12 +70,12 @@ object JmsApi {
     id  <- rid.nextId(js.id)
     p   <- effectBlocking(
              js.session.createProducer(null)
-           ).map(prod => JmsProducer(js, s"P-$id", prod)).refineOrDie { case t: JMSException => t }
-    _   <- log.debug(s"Created JMS Producer [${p.id}]")
+           ).map(prod => JmsProducer(js, s"P-$id", prod)).mapError(mapException)
+    _   <- log.debug(s"Created JMS Producer [$p]")
   } yield p)(p =>
     for {
-      _ <- log.debug(s"Closing JMS Producer [${p.id}]")
-      _ <- effectBlocking(p.producer.close()).orDie
+      _ <- log.debug(s"Closing JMS Producer [$p]")
+      _ <- effectBlocking(p.producer.close()).catchAll(t => logException(s"Error closing JMS Producer [$p]", t))
     } yield ()
   )
 
@@ -88,19 +91,19 @@ object JmsApi {
                      js.session.createDurableSubscriber(d.asInstanceOf[Topic], subscriberName)
                    case _                                  => js.session.createConsumer(d)
                  }
-               }.map(cons => JmsConsumer(js, s"C-$id", dest, cons)).refineOrDie { case t: JMSException => t }
+               }.map(cons => JmsConsumer(js, s"C-$id", dest, cons)).mapError(mapException)
         _   <- log.debug(s"Created JMS Consumer [$c]")
       } yield c
     )(c =>
       for {
         _ <- log.debug(s"Closing Consumer [$c]")
-        _ <- effectBlocking(c.consumer.close()).orDie
+        _ <- effectBlocking(c.consumer.close()).catchAll(t => logException(s"Error closing JMS consumer [${c.id}]", t))
       } yield ()
     )
 
   // doctag<send>
   def send[T](
-    content: FlowEnvelope[T],
+    content: FlowEnvelope[_, T],
     prod: JmsProducer,
     dest: JmsDestination,
     encode: JmsEncoder[T]
@@ -111,21 +114,23 @@ object JmsApi {
     _   <- log.debug(s"Message [$content] sent successfully with [$prod] to [${dest.asString}]")
   } yield ()).flatMapError { t =>
     log.warn(s"Error sending message with [$prod] to [$dest]: [${t.getMessage()}]") *> ZIO.succeed(t)
-  }.refineOrDie { case t: JMSException => t }
+  }.mapError(mapException)
   // end:doctag<send>
 
   // doctag<receive>
   def receive(cons: JmsConsumer) = (for {
     msg <- effectBlocking(Option(cons.consumer.receiveNoWait()))
-    _   <- if (msg.isDefined) log.debug(s"Received [$msg] with [$cons]") else ZIO.unit
+    _   <- ZIO.foreach(msg)(msg => log.debug(s"Received [$msg] with [$cons]"))
   } yield msg).flatMapError { t =>
     log.warn(s"Error receiving message with [$cons] : [${t.getMessage()}]") *> ZIO.succeed(t)
-  }.refineOrDie { case t: JMSException => t }
+  }.mapError(mapException)
   // end:doctag<receive>
 
   // doctag<stream>
   def jmsStream(cons: JmsConsumer) =
-    ZStream.repeatEffect(receive(cons)).collect { case Some(s) => FlowEnvelope.make(s) }
+    ZStream.repeatEffect(FlowEnvelope.fromEffect(receive(cons))).collect { case FlowEnvelope(id, m, Some(c)) =>
+      FlowEnvelope(id, m, c)
+    }
   // end:doctag<stream>
 
   def recoveringJmsStream(
@@ -144,7 +149,7 @@ object JmsApi {
     dest: JmsDestination,
     encode: JmsEncoder[T]
   ) =
-    ZSink.foreach[JmsEnv, JMSException, FlowEnvelope[T]](c => send[T](c, prod, dest, encode))
+    ZSink.foreach[JmsEnv, JMSException, FlowEnvelope[_, T]](c => send[T](c, prod, dest, encode))
   // end:doctag<sink>
 
   def recoveringJmsSink[T](
@@ -157,4 +162,23 @@ object JmsApi {
     sinkFact <- RecoveringJmsSink.make[T](cf, clientId, encode)
     s        <- sinkFact.sink(dest, retryInterval)
   } yield s
+
+  private def logException(msg: => String, t: Throwable) = log.warn(s"$msg : ${t.getMessage()}")
+
+  private val mapException: Throwable => JMSException = t =>
+    t match {
+      case t: JMSException => t
+      case e: Exception    =>
+        val je = new JMSException(e.getMessage())
+        je.setLinkedException(e)
+        je
+      case o               => new JMSException(o.getMessage())
+    }
+
+  // private def extractHeader(msg: Message) =
+  //   msg.getPropertyNames().asScala.map { name =>
+  //     val key   = name.toString()
+  //     val value = MsgProperty.make(msg.getObjectProperty(key))
+  //     (key, value)
+  //   }
 }

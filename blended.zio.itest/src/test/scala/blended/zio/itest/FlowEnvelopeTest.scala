@@ -78,8 +78,8 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
                    .withMeta[AckHandler](
                      AckHandler.key,
                      new AckHandler {
-                       override def ack(env: FlowEnvelope[_])  = ref.set(true)
-                       override def deny(env: FlowEnvelope[_]) = ZIO.unit
+                       override def ack(env: FlowEnvelope[_, _])  = ref.set(true)
+                       override def deny(env: FlowEnvelope[_, _]) = ZIO.unit
                      }
                    )
                )

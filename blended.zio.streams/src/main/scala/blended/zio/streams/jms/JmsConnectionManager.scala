@@ -10,7 +10,7 @@ import zio.clock._
 import zio.blocking._
 import zio.logging._
 
-import blended.zio.streams.{ KeepAliveMonitor, DefaultKeepAliveMonitor, FlowEnvelope, KeepAliveException }
+import blended.zio.streams._
 
 import JmsApiObject._
 import JmsApi._
@@ -155,17 +155,13 @@ object JmsConnectionManager {
     private def checkedConnect(
       cf: JmsConnectionFactory,
       clientId: String
-    ) = {
-
-      val cid = conCacheId(cf)(clientId)
-
-      ZIO.ifM(isRecovering(cid))(
-        ZIO.fail(new JMSException(s"Connection factory [$cid] is in recovery")),
-        for {
-          c <- doConnect(cf, clientId)
-        } yield c
-      )
-    }
+    ) = for {
+      cid <- ZIO.effectTotal(conCacheId(cf)(clientId))
+      con <- ZIO.ifM(isRecovering(cid))(
+               ZIO.fail(new JMSException(s"Connection factory [$cid] is in recovery")),
+               doConnect(cf, clientId)
+             )
+    } yield con
     // end:doctag<recover>
 
     private def doConnect(
