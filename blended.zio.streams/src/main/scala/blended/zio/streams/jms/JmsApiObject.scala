@@ -2,7 +2,7 @@ package blended.zio.streams.jms
 
 import javax.jms._
 
-import zio.duration.Duration
+import zio.duration._
 
 sealed trait JmsApiObject {
   def id: String
@@ -62,3 +62,9 @@ final case class JmsKeepAliveMonitor(
   allowed: Int
 )
 // end:doctag<keepalive>
+
+final case class JmsEndpoint(
+  cf: JmsApiObject.JmsConnectionFactory,
+  clientId: String,
+  dest: JmsDestination
+)

@@ -174,11 +174,4 @@ object JmsApi {
         je
       case o               => new JMSException(o.getMessage())
     }
-
-  // private def extractHeader(msg: Message) =
-  //   msg.getPropertyNames().asScala.map { name =>
-  //     val key   = name.toString()
-  //     val value = MsgProperty.make(msg.getObjectProperty(key))
-  //     (key, value)
-  //   }
 }

@@ -47,7 +47,8 @@ final case class FlowEnvelope[+I, +C](
 
 object FlowEnvelope {
 
-  def make[C](c: C) = FlowEnvelope(UUID.randomUUID().toString(), EnvelopeMetaMap.empty, c)
+  def make[I, C](i: I, c: C): FlowEnvelope[I, C] = FlowEnvelope(i, EnvelopeMetaMap.empty, c)
+  def make[C](c: C): FlowEnvelope[String, C]     = make(UUID.randomUUID().toString(), c)
 
   /**
    * Run an effect to produce some content and then create an envelope from the result
