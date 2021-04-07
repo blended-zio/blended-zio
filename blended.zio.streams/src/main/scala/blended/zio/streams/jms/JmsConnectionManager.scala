@@ -83,19 +83,15 @@ object JmsConnectionManager {
     private[jms] def connect(
       cf: JmsConnectionFactory,
       clientId: String
-    ) = {
-
-      val cid = conCacheId(cf)(clientId)
-
-      sem.withPermit(
-        for {
-          con <- for {
-                   cr <- getConnection(cid)
-                   c  <- ZIO.fromOption(cr).orElse(checkedConnect(cf, clientId))
-                 } yield c
-        } yield con
-      )
-    }
+    ) = sem.withPermit(
+      for {
+        cid <- ZIO.effectTotal(conCacheId(cf)(clientId))
+        con <- for {
+                 cr <- getConnection(cid)
+                 c  <- ZIO.fromOption(cr).orElse(checkedConnect(cf, clientId))
+               } yield c
+      } yield con
+    )
     // end:doctag<connect>
 
     // doctag<reconnect>
@@ -134,23 +130,22 @@ object JmsConnectionManager {
       cf: JmsConnectionFactory,
       clientId: String,
       t: Option[Throwable]
-    ) = {
-
-      val cid = conCacheId(cf)(clientId)
-
-      ZIO.ifM(getConnection(cid).map(_.isDefined))(
-        ZIO.unit,
-        for {
-          _ <-
-            log.debug(
-              s"Beginning recovery period for [$cid]" + t.map(c => s" , cause [${c.getMessage}]").getOrElse("")
-            )
-          _ <- recovering.update(r => cid +: r)
-          _ <- recovering.update(_.filterNot(_ == cid)).schedule(Schedule.duration(cf.reconnectInterval))
-          _ <- log.debug(s"Ending recovery period for [$cid]")
-        } yield ()
-      )
-    }
+    ) =
+      ZIO.effectTotal(conCacheId(cf)(clientId)).flatMap { cid =>
+        ZIO.ifM(getConnection(cid).map(_.isDefined))(
+          ZIO.unit,
+          for {
+            cid <- ZIO.effectTotal(conCacheId(cf)(clientId))
+            _   <-
+              log.debug(
+                s"Beginning recovery period for [$cid]" + t.map(c => s" , cause [${c.getMessage}]").getOrElse("")
+              )
+            _   <- recovering.update(r => cid +: r)
+            _   <- recovering.update(_.filterNot(_ == cid)).schedule(Schedule.duration(cf.reconnectInterval))
+            _   <- log.debug(s"Ending recovery period for [$cid]")
+          } yield ()
+        )
+      }
 
     private def checkedConnect(
       cf: JmsConnectionFactory,

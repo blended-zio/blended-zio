@@ -17,7 +17,11 @@ final case class FlowEnvelope[+I, +C](
 
   override def hashCode() = content.hashCode()
 
-  def map[C1](f: C => C1) = FlowEnvelope[I, C1](id, meta, f(content))
+  def mapContent[C1](f: C => C1) = FlowEnvelope[I, C1](id, meta, f(content))
+
+  def mapId[I1](f: I => I1) = FlowEnvelope[I1, C](f(id), meta, content)
+
+  def map[I1, C1](fi: I => I1)(fc: C => C1) = FlowEnvelope[I1, C1](fi(id), meta, fc(content))
 
   def zip[I1, C1](
     that: FlowEnvelope[I1, C1]
@@ -42,6 +46,11 @@ final case class FlowEnvelope[+I, +C](
   def ackOrDeny = {
     val ah = meta.get[AckHandler](AckHandler.key)
     ah.ack(self).catchAll(_ => ah.deny(self))
+  }
+
+  def deny = {
+    val ah = meta.get[AckHandler](AckHandler.key)
+    ah.deny(self)
   }
 }
 

@@ -1,18 +1,13 @@
 package blended.zio.itest
 
-import java.util.concurrent.TimeUnit
-import java.text.SimpleDateFormat
-
 import zio._
 import zio.console._
-import zio.clock._
 import zio.duration._
 import zio.logging._
 import zio.logging.slf4j._
 
 import org.apache.activemq.broker.BrokerService
 import org.apache.activemq.ActiveMQConnectionFactory
-import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
 
@@ -21,10 +16,9 @@ import blended.zio.streams.jms._
 import JmsApi._
 import JmsApiObject._
 import JmsDestination._
+import java.util.UUID
 
 object JmsStreamDemo extends App {
-
-  private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
   // doctag<layer>
   private val logEnv = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
@@ -33,16 +27,6 @@ object JmsStreamDemo extends App {
 
   private val combinedEnv = logEnv ++ brokerEnv ++ defaultJmsEnv(logEnv)
   // end:doctag<layer>
-
-  // doctag<stream>
-  private val stream = ZStream
-    .fromSchedule(Schedule.spaced(500.millis).jittered)
-    .mapM(_ =>
-      currentTime(TimeUnit.MILLISECONDS)
-        .map(sdf.format)
-        .map(s => FlowEnvelope.make(s))
-    )
-  // end:doctag<stream>
 
   private val testDest: JmsDestination = JmsQueue("sample")
 
@@ -53,26 +37,26 @@ object JmsStreamDemo extends App {
       reconnectInterval = 5.seconds
     )
 
-  private def producer(con: JmsConnection) =
-    createSession(con).use(session =>
-      createProducer(session).use(prod => stream.run(jmsSink(prod, testDest, stringEnvelopeEncoder)))
-    )
-
   // doctag<program>
   private val program =
     for {
-      _      <- ZIO.service[BrokerService]
-      _      <- log.info("ActiveMW Broker started")
-      conMgr <- ZIO.service[JmsConnectionManager.Service]
-      con    <- conMgr.connect(cf, "sample")
-      // Start a producer with sample messages
-      _      <- producer(con)
-      // Simulate a reconnect
-      _      <- conMgr.reconnect(con, Some(new Exception("Boom"))).schedule(Schedule.duration(10.seconds)).fork
-      // Finally create a stream, consuming the messages from the JMS Endpoint
-      _      <- EndpointManager.createStream(JmsEndpoint(cf, "endpoint", testDest)).foreach(env => putStrLn(s"$env"))
+      _ <- ZIO.service[BrokerService]
+      _ <- log.info("ActiveMQ Broker started")
+      _ <- JmsEndpoint.make(cf, "endpoint", testDest).use { ep =>
+             for {
+               _   <- ep.connect
+               _   <- ep.send(
+                        FlowEnvelope
+                          .make(UUID.randomUUID().toString(), "Hallo Andreas")
+                          .addHeader(EnvelopeHeader(Map("foo" -> "bar")))
+                      )(
+                        _.mapContent(c => JmsMessageBody.Text(c))
+                      )
+               env <- ep.nextEnvelope
+               _   <- putStrLn(env.toString())
+             } yield ()
+           }
     } yield ()
-
   // end:doctag<program>
 
   // doctag<run>

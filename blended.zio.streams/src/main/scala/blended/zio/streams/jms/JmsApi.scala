@@ -48,7 +48,7 @@ object JmsApi {
     _   <- mgr.reconnect(con, cause)
   } yield ()
 
-  def createSession(con: JmsConnection) = ZManaged.make(
+  def createSession_(con: JmsConnection) =
     (for {
       rid <- ZIO.service[RuntimeId.Service]
       js  <- effectBlocking(
@@ -58,48 +58,55 @@ object JmsApi {
       s    = JmsSession(con, s"S-$id", js)
       _   <- log.debug(s"Created JMS Session [$s]")
     } yield s).mapError(mapException)
-  )(s =>
-    for {
-      _ <- log.debug(s"Closing JMS Session [$s")
-      _ <- effectBlocking(s.session.close()).catchAll(t => logException(s"Error closing JMS session [$s]", t))
-    } yield ()
-  )
 
-  def createProducer(js: JmsSession) = ZManaged.make(for {
+  def closeSession_(js: JmsSession) =
+    for {
+      _ <- log.debug(s"Closing JMS Session [$js")
+      _ <- effectBlocking(js.session.close()).catchAll(t => logException(s"Error closing JMS session [$js]", t))
+    } yield ()
+
+  def createSession(con: JmsConnection) = ZManaged.make(createSession_(con))(s => closeSession_(s))
+
+  def createProducer_(js: JmsSession) = for {
     rid <- ZIO.service[RuntimeId.Service]
     id  <- rid.nextId(js.id)
     p   <- effectBlocking(
              js.session.createProducer(null)
            ).map(prod => JmsProducer(js, s"P-$id", prod)).mapError(mapException)
     _   <- log.debug(s"Created JMS Producer [$p]")
-  } yield p)(p =>
+  } yield p
+
+  def closeProducer_(p: JmsProducer) =
     for {
       _ <- log.debug(s"Closing JMS Producer [$p]")
       _ <- effectBlocking(p.producer.close()).catchAll(t => logException(s"Error closing JMS Producer [$p]", t))
     } yield ()
-  )
+
+  def createProducer(js: JmsSession) = ZManaged.make(createProducer_(js))(p => closeProducer_(p))
+
+  def createConsumer_(js: JmsSession, dest: JmsDestination) =
+    for {
+      rid <- ZIO.service[RuntimeId.Service]
+      id  <- rid.nextId(js.id)
+      d   <- dest.create(js)
+      c   <- effectBlocking {
+               dest match {
+                 case JmsDurableTopic(_, subscriberName) =>
+                   js.session.createDurableSubscriber(d.asInstanceOf[Topic], subscriberName)
+                 case _                                  => js.session.createConsumer(d)
+               }
+             }.map(cons => JmsConsumer(js, s"C-$id", dest, cons)).mapError(mapException)
+      _   <- log.debug(s"Created JMS Consumer [$c]")
+    } yield c
+
+  def closeConsumer_(c: JmsConsumer) =
+    for {
+      _ <- log.debug(s"Closing Consumer [$c]")
+      _ <- effectBlocking(c.consumer.close()).catchAll(t => logException(s"Error closing JMS consumer [${c.id}]", t))
+    } yield ()
 
   def createConsumer(js: JmsSession, dest: JmsDestination) =
-    ZManaged.make(
-      for {
-        rid <- ZIO.service[RuntimeId.Service]
-        id  <- rid.nextId(js.id)
-        d   <- dest.create(js)
-        c   <- effectBlocking {
-                 dest match {
-                   case JmsDurableTopic(_, subscriberName) =>
-                     js.session.createDurableSubscriber(d.asInstanceOf[Topic], subscriberName)
-                   case _                                  => js.session.createConsumer(d)
-                 }
-               }.map(cons => JmsConsumer(js, s"C-$id", dest, cons)).mapError(mapException)
-        _   <- log.debug(s"Created JMS Consumer [$c]")
-      } yield c
-    )(c =>
-      for {
-        _ <- log.debug(s"Closing Consumer [$c]")
-        _ <- effectBlocking(c.consumer.close()).catchAll(t => logException(s"Error closing JMS consumer [${c.id}]", t))
-      } yield ()
-    )
+    ZManaged.make(createConsumer_(js, dest))(c => closeConsumer_(c))
 
   // doctag<send>
   def send[T](

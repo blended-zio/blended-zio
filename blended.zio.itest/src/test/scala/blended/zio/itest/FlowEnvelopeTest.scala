@@ -29,7 +29,7 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
 
   private val canMap = test("allows to map the content") {
     val s   = "Hello Andreas"
-    val env = FlowEnvelope.make(s).map(_.size)
+    val env = FlowEnvelope.make(s).mapContent(_.size)
     assert(env.content)(equalTo(s.size))
   }
 
