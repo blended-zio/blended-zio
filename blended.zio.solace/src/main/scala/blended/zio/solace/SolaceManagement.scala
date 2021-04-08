@@ -200,7 +200,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
   def decodeKeys(s: String, key: String) = for {
     json <- ZIO.fromEither(Parse.parse(s)).mapError(s => new Exception(s))
     data <- JsonSupport.extract(json, "data").map(_.arrayOrEmpty)
-    keys     = data.map(_.field(key).map(_.stringOrEmpty).getOrElse("")).filter(s => !s.isEmpty())
+    keys  = data.map(_.field(key).map(_.stringOrEmpty).getOrElse("")).filter(s => !s.isEmpty())
   } yield Chunk.fromIterable(keys)
 
   private val sempUrl: String => ZIO[Any, Nothing, String] = op => ZIO.succeed(s"${conn.sempv2Base}/$op")
