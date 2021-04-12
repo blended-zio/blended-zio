@@ -1,9 +1,7 @@
 package blended.zio.streams
 
 import zio._
-import zio.clock._
 import zio.duration._
-import zio.stream._
 
 trait Connector[R, I, T] {
 
@@ -40,9 +38,6 @@ sealed class Endpoint[R, I, T](
              case _               => ZIO.effectTotal(None)
            }
   } yield env
-
-  def stream: ZStream[R with Clock, Throwable, FlowEnvelope[I, T]]                            =
-    ZStream.repeatEffectWith(nextEnvelope, Schedule.fromDuration(cfg.pollInterval)).collect { case Some(e) => e }
 
   def send[I1, A](
     env: FlowEnvelope[I1, A]
