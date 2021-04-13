@@ -2,11 +2,12 @@ import sbt._
 
 object Dependencies {
 
-  val vAmq     = "5.16.0"
-  val vJolokia = "1.6.2"
-  val vLogback = "1.2.3"
-  val vSolace  = "10.10.0"
-  val vSttp3   = "3.1.6"
+  val vAmq            = "5.16.0"
+  val vJolokia        = "1.6.2"
+  val vLogback        = "1.2.3"
+  val vSolace         = "10.10.0"
+  val vSttp3          = "3.1.6"
+  val vTestContainers = "0.39.3"
 
   val vZio        = "1.0.6"
   val vZioConfig  = "1.0.4"
@@ -35,6 +36,7 @@ object Dependencies {
   val solJms         = "com.solacesystems"              % "sol-jms"                       % vSolace
   val sttp3Core      = "com.softwaremill.sttp.client3" %% "core"                          % vSttp3
   val sttp3Backend   = "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % vSttp3
+  val testContainers = "com.dimafeng"                  %% "testcontainers-scala"          % vTestContainers
   val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.7"
 
   /* --- Convenient dependency groups */

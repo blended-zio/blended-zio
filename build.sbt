@@ -48,6 +48,7 @@ lazy val root =
       blendedStreams,
       blendedSolace,
       blendedITest,
+      blendedITestContainer,
       docs
     )
 
@@ -131,6 +132,16 @@ lazy val blendedITest =
     )
     .dependsOn(blendedCore, blendedStreams, blendedSolace)
 
+lazy val blendedITestContainer =
+  (project in file("blended.zio.itest.container"))
+    .settings(stdSettings("blended.zio.itest.container"))
+    .settings(
+      libraryDependencies ++= zioDefault ++ Seq(
+        testContainers
+      )
+    )
+    .dependsOn(blendedITest)
+
 lazy val docs = project
   .in(file("website"))
   .settings(
@@ -148,7 +159,8 @@ lazy val docs = project
       blendedStreams,
       blendedSolace,
       blendedActiveMq,
-      blendedITest
+      blendedITest,
+      blendedITestContainer
     ),
     target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
     mdocIn := (baseDirectory in LocalRootProject).value / "docs",

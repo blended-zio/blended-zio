@@ -41,8 +41,8 @@ object JmsMessageSelector {
   private def paramAsString(p: MsgProperty[_]): String = p.value match {
     case s: String  => s"'$s'"
     case c: Char    => s"'$c'"
-    case b: Boolean => if (b) "TRUE" else ("FALSE")
-    case o          => o.toString()
+    case b: Boolean => b.toString.toUpperCase
+    case o          => o.toString
   }
 
   implicit class JmsSelectorOps(self: JmsMessageSelector) {
