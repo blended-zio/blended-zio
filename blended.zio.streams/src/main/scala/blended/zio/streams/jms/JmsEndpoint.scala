@@ -31,7 +31,7 @@ object JmsEndpoint {
     ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, selector))
     con <- connector(ep)
     ep  <- Endpoint.make(ep.id, con, Endpoint.EndpointConfig.default)
-    _ <- ep.connect
+    _   <- ep.connect
   } yield ep).toManaged(ep => ep.disconnect.catchAll(_ => ZIO.unit))
 
   private def connector(ep: JmsEndpoint): ZIO[JmsApi.JmsEnv, Throwable, Connector[JmsEnv, String, JmsMessageBody]] =
