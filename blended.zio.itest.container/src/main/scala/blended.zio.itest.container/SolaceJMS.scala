@@ -38,5 +38,5 @@ object SolaceJMS {
   val solaceJmsUrl = for {
     ctSol <- ZIO.service[SolaceJMS]
     p      = ctSol.mappedPort(55555)
-  } yield s"tcp://localhost:$p"
+  } yield s"smf://localhost:$p"
 }

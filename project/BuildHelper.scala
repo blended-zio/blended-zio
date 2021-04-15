@@ -31,8 +31,7 @@ object BuildHelper {
     "-Wunused:privates",
     "-Wunused:params",
     "-Wunused:nowarn",
-    "-Wvalue-discard",
-    "-Wconf:cat=unused-imports&src=blended.zio.jmx.JmxObjectName.scala:s,cat=unused-imports&src=blended.zio.jmx.publish.OpenMBeanMapper.scala:s"
+    "-Wvalue-discard"
   )
 
   private val stdOptsUpto212 = Seq(

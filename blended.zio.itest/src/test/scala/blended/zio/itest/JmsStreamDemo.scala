@@ -44,7 +44,6 @@ object JmsStreamDemo extends App {
       _ <- log.info("ActiveMQ Broker started")
       _ <- JmsEndpoint.make(cf, "endpoint", testDest).use { ep =>
              for {
-               _   <- ep.connect
                _   <- ep.send(
                         FlowEnvelope
                           .make(UUID.randomUUID().toString(), "Hallo Andreas")

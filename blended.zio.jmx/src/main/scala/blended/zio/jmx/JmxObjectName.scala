@@ -3,7 +3,6 @@ package blended.zio.jmx
 import scala.collection.mutable
 import javax.management.ObjectName
 import java.util.function.BiConsumer
-import scala.collection.compat._
 import zio._
 
 class InvalidObjectNameFormatException(name: String) extends Exception(s"Value [${name}] is not a valid object name")

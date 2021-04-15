@@ -145,14 +145,14 @@ lazy val blendedITestContainer =
 lazy val docs = project
   .in(file("website"))
   .settings(
-    skip.in(publish) := true,
+    publish / skip := true,
     moduleName := "blended.zio.website",
     scalacOptions -= "-Yno-imports",
     libraryDependencies ++= Seq(
       zioCore,
       uzHttp
     ),
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inProjects(
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
       blendedCore,
       blendedJmx,
       blendedJolokia,
@@ -162,12 +162,12 @@ lazy val docs = project
       blendedITest,
       blendedITestContainer
     ),
-    target in (ScalaUnidoc, unidoc) := (baseDirectory in LocalRootProject).value / "website" / "static" / "api",
-    mdocIn := (baseDirectory in LocalRootProject).value / "docs",
-    mdocOut := (baseDirectory in LocalRootProject).value / "website" / "docs",
-    cleanFiles += (target in (ScalaUnidoc, unidoc)).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(unidoc in Compile).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(unidoc in Compile).value
+    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    mdocIn := (LocalRootProject / baseDirectory).value / "docs",
+    mdocOut := (LocalRootProject / baseDirectory).value / "website" / "docs",
+    cleanFiles += (ScalaUnidoc / unidoc / target).value,
+    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
   .dependsOn(blendedCore, blendedJmx, blendedStreams, blendedActiveMq)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

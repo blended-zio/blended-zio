@@ -36,6 +36,8 @@ object JNDISupport {
              case _    => None
            }
     _   <- log.info(s"Lookup of [$name] returned [$res]")
-  } yield res).catchAll { case _ => ZIO.none }
-
+  } yield res).catchAll { t =>
+    // TODO: print out stacktrace to log
+    ZIO.effectTotal(t.printStackTrace()) *> ZIO.none
+  }
 }
