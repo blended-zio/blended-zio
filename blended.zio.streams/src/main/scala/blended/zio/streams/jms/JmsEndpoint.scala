@@ -91,17 +91,17 @@ object JmsEndpoint {
     def nextEnvelope_? = for {
       cs       <- state.get
       maybeMsg <- cs match {
-                    case None    => ZIO.effectTotal(None)
+                    case None    => ZIO.none
                     case Some(v) => JmsApi.receive(v.consumer)
                   }
       maybeEnv  = maybeMsg.map { m =>
                     val h = extractHeader(m)
-                    val b = (m match {
+                    val c = (m match {
                       case tm: TextMessage  => JmsMessageBody.Text(tm.getText())
                       case bm: BytesMessage => JmsMessageBody.Binary(extractBytes(bm))
                       case _                => JmsMessageBody.Empty
                     }).asInstanceOf[JmsMessageBody]
-                    FlowEnvelope.make(m.getJMSMessageID(), b).addHeader(h)
+                    FlowEnvelope.make(m.getJMSMessageID(), c).addHeader(h)
                   }
     } yield maybeEnv
 

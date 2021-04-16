@@ -38,7 +38,7 @@ final class EnvelopeMetaMap private (private val map: Map[EnvelopeMeta[Any], Any
     }
   )
 
-  def eraseMeta[V](k: EnvelopeMeta[V]): EnvelopeMetaMap = new EnvelopeMetaMap(map - k.asInstanceOf[EnvelopeMeta[Any]])
+  def removeMeta[V](k: EnvelopeMeta[V]): EnvelopeMetaMap = new EnvelopeMetaMap(map - k.asInstanceOf[EnvelopeMeta[Any]])
 
   def withMeta[V](k: EnvelopeMeta[V], value: V): EnvelopeMetaMap = update(k, k.combine(_, value))
 

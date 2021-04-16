@@ -28,7 +28,7 @@ final case class FlowEnvelope[+I, +C](
   )(implicit i: Zippable[I, I1], z: Zippable[C, C1]): FlowEnvelope[i.Out, z.Out] =
     FlowEnvelope(i.zip(self.id, that.id), meta ++ that.meta, z.zip(content, that.content))
 
-  def eraseMeta[V](k: EnvelopeMeta[V]) = FlowEnvelope(id, meta.eraseMeta(k), content)
+  def removeMeta[V](k: EnvelopeMeta[V]) = FlowEnvelope(id, meta.removeMeta(k), content)
 
   def withMeta[V](k: EnvelopeMeta[V], v: V) = FlowEnvelope(id, meta.withMeta(k, v), content)
 

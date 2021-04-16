@@ -1,6 +1,7 @@
 package blended.zio.itest.condition
 
 import zio._
+import zio.logging._
 
 import blended.zio.streams.jms.JmsApi
 import blended.zio.streams.jms.JmsApiObject._
@@ -14,6 +15,6 @@ object JmsAvailableCondition {
     (for {
       mgr <- ZIO.service[JmsConnectionManager.Service]
       _   <- mgr.close(con)
-    } yield (())).orDie
+    } yield (())).catchAll(t => log.warn(s"Error closing JMS connection [${cf.id}] : ${t.getMessage()}"))
   }
 }

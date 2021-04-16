@@ -44,7 +44,7 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
       equalTo(Left(HeaderException.HeaderUnexpectedType("foo", classOf[Int].getName(), classOf[String].getName())))
     )
 
-    val erased = assert(env.eraseMeta(EnvelopeHeader.key).header.entries)(isEmpty)
+    val erased = assert(env.removeMeta(EnvelopeHeader.key).header.entries)(isEmpty)
 
     lookupOk && lookupFail && erased
   }
