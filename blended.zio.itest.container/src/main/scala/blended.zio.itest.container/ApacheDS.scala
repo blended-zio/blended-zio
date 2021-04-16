@@ -9,9 +9,11 @@ import org.testcontainers.containers.Network
 
 import blended.zio.itest.condition.LDAPAvailableCondition.LDAPConnectionData
 
-class ApacheDS extends GenericContainer("blended/apacheds-alpine:1.0.1", exposedPorts = Seq(10389))
+class ApacheDS extends GenericContainer("blended/apacheds-alpine:1.0.1", exposedPorts = Seq(ApacheDS.ldapPort))
 
 object ApacheDS {
+
+  val ldapPort = 10389
 
   def apply() = new ApacheDS()
 
@@ -25,6 +27,6 @@ object ApacheDS {
 
   val ldapConnection = for {
     ct <- ZIO.service[ApacheDS]
-    p   = ct.mappedPort(10389)
+    p   = ct.mappedPort(ldapPort)
   } yield LDAPConnectionData(s"ldap://localhost:${p}", "uid=admin,ou=system", "blended")
 }

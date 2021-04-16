@@ -12,12 +12,15 @@ import org.testcontainers.containers.Network
 class SolaceJMS(adminUser: String, adminPassword: String)
   extends GenericContainer(
     dockerImage = "solace/solace-pubsub-standard:latest",
-    exposedPorts = Seq(8080, 55555),
+    exposedPorts = Seq(SolaceJMS.httpPort, SolaceJMS.jmsPort),
     waitStrategy = Some(new HostPortWaitStrategy().withStartupTimeout(Duration.ofMinutes(2))),
     env = Map("username_admin_globalaccesslevel" -> adminUser, "username_admin_password" -> adminPassword)
   )
 
 object SolaceJMS {
+
+  val httpPort = 8080
+  val jmsPort  = 55555
 
   def apply(user: String, pwd: String) = new SolaceJMS(user, pwd)
 
@@ -32,11 +35,11 @@ object SolaceJMS {
 
   val solaceAdminUrl = for {
     ctSol <- ZIO.service[SolaceJMS]
-    p      = ctSol.mappedPort(8080)
+    p      = ctSol.mappedPort(httpPort)
   } yield s"http://localhost:$p"
 
   val solaceJmsUrl = for {
     ctSol <- ZIO.service[SolaceJMS]
-    p      = ctSol.mappedPort(55555)
+    p      = ctSol.mappedPort(jmsPort)
   } yield s"smf://localhost:$p"
 }

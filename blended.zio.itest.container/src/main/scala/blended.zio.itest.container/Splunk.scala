@@ -10,11 +10,14 @@ import org.testcontainers.containers.Network
 class Splunk
   extends GenericContainer(
     dockerImage = "blended/splunk:8.1.1.2",
-    exposedPorts = Seq(8000, 8088),
+    exposedPorts = Seq(Splunk.uiPort, Splunk.reportPort),
     waitStrategy = Some(new HostPortWaitStrategy().withStartupTimeout(Duration.ofMinutes(2)))
   )
 
 object Splunk {
+
+  val uiPort     = 8000
+  val reportPort = 8088
 
   def apply() = new Splunk()
 
