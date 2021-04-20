@@ -248,15 +248,11 @@ object JmsConnectionManager {
       cr  = cm.get(id)
     } yield cr
 
-    private def addConnection(c: JmsConnection) = for {
-      cm <- conns.updateAndGet(_ ++ Map(c.id -> c))
-      _  <- log.trace(s"Stored JMS connections : $cm")
-    } yield ()
+    private def addConnection(c: JmsConnection)    =
+      conns.update(_ ++ Map(c.id -> c)) <* log.trace(s"Stored JMS connections : $conns")
 
-    private def removeConnection(c: JmsConnection) = for {
-      cm <- conns.updateAndGet(_ - c.id)
-      _  <- log.trace(s"Stored JMS connections after deleting [$c]: $cm")
-    } yield ()
+    private def removeConnection(c: JmsConnection) =
+      conns.update(_ - c.id) <* log.trace(s"Stored JMS connections after deleting [$c]: $conns")
 
     // Check whether a connection is currently recovering
     private def isRecovering(id: String) = recovering.get.map(_.contains(id))

@@ -3,6 +3,9 @@ package blended.zio.streams
 import zio._
 import zio.duration._
 
+// A connector is required to build an arbitrary endpoint
+// Basic capabilities are connect / disconnect from the underlying infrastructure if required
+// and sending / polling a single envelope
 trait Connector[R, I, T] {
 
   // Effectfully connect the endpoint to the underlying technology
@@ -18,6 +21,7 @@ trait Connector[R, I, T] {
   def sendEnvelope(f: FlowEnvelope[I, T]): ZIO[R, Throwable, FlowEnvelope[I, T]]
 }
 
+// An endpoint that requires an environment R and consumes / produces FlowEnvelopes[I,T]
 sealed class Endpoint[R, I, T](
   val id: String,
   con: Connector[R, I, T],

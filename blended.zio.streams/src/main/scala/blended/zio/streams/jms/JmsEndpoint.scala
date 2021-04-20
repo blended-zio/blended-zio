@@ -11,16 +11,16 @@ import zio.blocking._
 import JmsApi._
 import JmsApiObject._
 
-final case class JmsEndpoint private (
-  cf: JmsApiObject.JmsConnectionFactory,
-  clientId: String,
-  dest: JmsDestination,
-  selector: Option[JmsMessageSelector]
-) {
-  val id = s"Endpoint-${cf.id}-${clientId}-${dest}"
-}
-
 object JmsEndpoint {
+
+  final private case class JmsEndpoint private (
+    cf: JmsApiObject.JmsConnectionFactory,
+    clientId: String,
+    dest: JmsDestination,
+    selector: Option[JmsMessageSelector]
+  ) {
+    val id = s"Endpoint-${cf.id}-${clientId}-${dest}"
+  }
 
   def make(
     cf: JmsApiObject.JmsConnectionFactory,
@@ -79,12 +79,10 @@ object JmsEndpoint {
     def disconnect = state.update {
       _ match {
         case Some(v) =>
-          for {
-            _ <- JmsApi.closeConsumer_(v.consumer)
-            _ <- JmsApi.closeProducer_(v.producer)
-            _ <- JmsApi.closeSession_(v.session)
-          } yield None
-        case None    => ZIO.effectTotal(None)
+          JmsApi.closeConsumer_(v.consumer) *> JmsApi.closeProducer_(v.producer) *> JmsApi.closeSession_(
+            v.session
+          ) *> ZIO.none
+        case None    => ZIO.succeed(None)
       }
     }
 
