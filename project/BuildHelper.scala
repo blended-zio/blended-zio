@@ -75,7 +75,7 @@ object BuildHelper {
     Seq(
       name := s"$prjName",
       crossScalaVersions := Seq(Scala213),
-      scalaVersion in ThisBuild := ScalaDefault,
+      ThisBuild / scalaVersion := ScalaDefault,
       scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
       publish / skip := false,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),

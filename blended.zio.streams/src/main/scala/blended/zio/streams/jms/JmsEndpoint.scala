@@ -27,10 +27,10 @@ object JmsEndpoint {
     clientId: String,
     dest: JmsDestination,
     selector: Option[JmsMessageSelector] = None
-  ): ZManaged[JmsApi.JmsEnv, Throwable, Endpoint[JmsEnv, String, JmsMessageBody]] = (for {
+  ): ZManaged[JmsApi.JmsEnv, Throwable, Endpoint[String, JmsMessageBody]] = (for {
     ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, selector))
     con <- connector(ep)
-    ep  <- Endpoint.make(ep.id, con, Endpoint.EndpointConfig.default)
+    ep  <- Endpoint.make(con, Endpoint.defaultEndpointConfig)
     _   <- ep.connect
   } yield ep).toManaged(ep => ep.disconnect.catchAll(_ => ZIO.unit))
 
@@ -39,9 +39,9 @@ object JmsEndpoint {
       state <- RefM.make[Option[JmsEndpointState]](None)
       con    = new JmsConnector(ep, state)
     } yield new Connector[JmsEnv, String, JmsMessageBody] {
-      override def connect: ZIO[JmsEnv, Throwable, Unit] = con.connect
+      override def start: ZIO[JmsEnv, Throwable, Unit] = con.start
 
-      override def disconnect: ZIO[JmsEnv, Throwable, Unit] = con.disconnect
+      override def stop: ZIO[JmsEnv, Throwable, Unit] = con.stop
 
       override def nextEnvelope: ZIO[JmsEnv, Throwable, Option[FlowEnvelope[String, JmsMessageBody]]] =
         con.nextEnvelope_?
@@ -63,7 +63,7 @@ object JmsEndpoint {
     state: RefM[Option[JmsEndpointState]]
   ) {
 
-    def connect = state.update {
+    def start = state.update {
       _ match {
         case None        =>
           for {
@@ -72,11 +72,11 @@ object JmsEndpoint {
             cons <- JmsApi.createConsumer_(sess, ep.dest)
             prod <- JmsApi.createProducer_(sess)
           } yield Some(JmsEndpointState(sess, cons, prod))
-        case v @ Some(_) => ZIO.effectTotal(v)
+        case v @ Some(_) => ZIO.succeed(v)
       }
     }
 
-    def disconnect = state.update {
+    def stop = state.update {
       _ match {
         case Some(v) =>
           JmsApi.closeConsumer_(v.consumer) *> JmsApi.closeProducer_(v.producer) *> JmsApi.closeSession_(

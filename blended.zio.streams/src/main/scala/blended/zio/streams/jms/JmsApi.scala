@@ -125,12 +125,13 @@ object JmsApi {
   // end:doctag<send>
 
   // doctag<receive>
-  def receive(cons: JmsConsumer) = (for {
-    msg <- effectBlocking(Option(cons.consumer.receiveNoWait()))
-    _   <- ZIO.foreach(msg)(msg => log.debug(s"Received [$msg] with [$cons]"))
-  } yield msg).flatMapError { t =>
-    log.warn(s"Error receiving message with [$cons] : [${t.getMessage()}]") *> ZIO.succeed(t)
-  }.mapError(mapException)
+  def receive(cons: JmsConsumer) =
+    effectBlocking(Option(cons.consumer.receiveNoWait()))
+      .flatMap(msg => ZIO.foreach(msg)(msg => log.debug(s"Received [$msg] with [$cons]")) *> ZIO.succeed(msg))
+      .flatMapError { t =>
+        log.warn(s"Error receiving message with [$cons] : [${t.getMessage()}]") *> ZIO.succeed(t)
+      }
+      .mapError(mapException)
   // end:doctag<receive>
 
   // doctag<stream>

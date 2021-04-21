@@ -103,7 +103,8 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
     cfJson <- ZIO.effect(
                 jObjectFields(
                   ("connectionFactoryName", jString(name)),
-                  ("msgVpnName", jString(vpn))
+                  ("msgVpnName", jString(vpn)),
+                  ("transportDirectTransportEnabled", jBool(false))
                 )
               )
     res    <- ZIO.ifM(cfJndiNames(vpn).map(_.contains(name)))(
