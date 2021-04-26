@@ -46,10 +46,8 @@ object JmsStreamDemo extends App {
              for {
                _   <- ep.send(
                         FlowEnvelope
-                          .make(UUID.randomUUID().toString(), "Hallo Andreas")
+                          .make(UUID.randomUUID().toString(), JmsMessageBody.Text("Hallo Andreas"))
                           .addHeader(EnvelopeHeader(Map("foo" -> "bar")))
-                      )(
-                        _.mapContent(c => JmsMessageBody.Text(c))
                       )
                env <- ep.nextEnvelope
                _   <- putStrLn(env.toString())
