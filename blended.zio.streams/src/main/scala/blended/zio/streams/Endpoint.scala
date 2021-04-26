@@ -175,11 +175,10 @@ object Endpoint {
     type R = ep.R
     override val id = ep.id
 
-    override def connect: ZIO[Clock with Logging, Throwable, Unit] = ep.connect
-    override def disconnect: ZIO[Clock with Logging, Throwable, Unit] = ep.disconnect
-    override def nextEnvelope: ZIO[Clock with Logging, Throwable, Option[FlowEnvelope[I1, T1]]] = ep.nextEnvelope
+    override def connect: ZIO[Clock with Logging, Throwable, Unit]                                         = ep.connect
+    override def disconnect: ZIO[Clock with Logging, Throwable, Unit]                                      = ep.disconnect
+    override def nextEnvelope: ZIO[Clock with Logging, Throwable, Option[FlowEnvelope[I1, T1]]]            = ep.nextEnvelope
     override def send(env: FlowEnvelope[I1, T1]): ZIO[Clock with Logging, Throwable, FlowEnvelope[I1, T1]] =
       ep.send(env)
   }
-
 }
