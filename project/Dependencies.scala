@@ -6,10 +6,10 @@ object Dependencies {
   val vJolokia        = "1.6.2"
   val vLogback        = "1.2.3"
   val vSolace         = "10.10.0"
-  val vSttp3          = "3.1.6"
+  val vSttp3          = "3.1.9"
   val vTestContainers = "0.39.3"
 
-  val vZio        = "1.0.6"
+  val vZio        = "1.0.7"
   val vZioConfig  = "1.0.4"
   val vZioLogging = "0.5.8"
   val vZioNio     = "1.0.0-RC9"
