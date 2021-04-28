@@ -30,7 +30,7 @@ object JmsEndpoint {
   ): ZManaged[JmsApi.JmsEnv, Throwable, Endpoint[String, JmsMessageBody]] = (for {
     ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, selector))
     con <- connector(ep)
-    ep  <- Endpoint.make(con, Endpoint.defaultEndpointConfig)
+    ep  <- Endpoint.make(ep.id, con, Endpoint.defaultEndpointConfig)
     _   <- ep.connect
   } yield ep).toManaged(ep => ep.disconnect.catchAll(_ => ZIO.unit))
 
@@ -106,7 +106,7 @@ object JmsEndpoint {
     def sendEnvelope(env: FlowEnvelope[String, JmsMessageBody]) = for {
       cs  <- state.get
       res <- cs match {
-               case None    => ZIO.fail(new IllegalStateException(s"Endpoint ${ep.id} is currently not connected"))
+               case None    => ZIO.fail(new IllegalStateException(s"Endpoint [${ep.id}] is currently not connected"))
                case Some(v) => JmsApi.send[JmsMessageBody](env, v.producer, ep.dest, encoder) *> ZIO.effectTotal(env)
              }
     } yield res

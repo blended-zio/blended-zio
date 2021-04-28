@@ -45,12 +45,12 @@ final case class FlowEnvelope[+I, +C](
 
   def ackOrDeny = {
     val ah = meta.get[AckHandler](AckHandler.key)
-    ah.ack(self).catchAll(_ => ah.deny(self))
+    ah.ack.catchAll(_ => ah.deny)
   }
 
   def deny = {
     val ah = meta.get[AckHandler](AckHandler.key)
-    ah.deny(self)
+    ah.deny
   }
 }
 

@@ -4,7 +4,6 @@ import zio._
 import zio.clock._
 import zio.duration._
 import zio.logging._
-import zio.random._
 
 // A connector that requires an environment R and works on top of FlowEnvelope[I,T]
 trait Connector[R, I, T] {
@@ -27,6 +26,8 @@ trait Endpoint[I, T] {
 
   type R
   val id: String
+
+  val config: Endpoint.EndpointConfig
 
   // We delegate to connector start if and only if the endpoint is in Created state
   def connect: ZIO[Clock with Logging, Throwable, Unit]
@@ -93,6 +94,16 @@ object Endpoint {
     val connector: Connector[R, I, T]
     val state: RefM[EndpointState[I, T]]
 
+    override def toString(): String = s"${getClass().getSimpleName()}($id)"
+
+    private def ackHandler[I, T](env: FlowEnvelope[I, T]) = new AckHandler {
+
+      def removeFromInflight = state.update(s => ZIO.succeed(s.copy(inflight = s.inflight.filter(_.id != env.id))))
+
+      override def ack  = removeFromInflight
+      override def deny = removeFromInflight
+    }
+
     // We delegate to connector start if and only if the endpoint is in Created state
     final def connect: ZIO[Clock with Logging, Throwable, Unit] = state.updateSome {
       case EndpointState(EndpointStateDetail.Created, _) =>
@@ -128,10 +139,13 @@ object Endpoint {
                  case EndpointStateDetail.Started =>
                    if (cs.inflight.size < config.capacity) {
                      for {
-                       env <- connector.nextEnvelope
-                       _   <-
-                         ZIO.foreach(env)(env => state.update(s => ZIO.succeed(s.copy(inflight = s.inflight :+ env))))
-                     } yield env
+                       env       <- connector.nextEnvelope
+                       envWithAck = env.map(e => e.withMeta(AckHandler.key, ackHandler(e)))
+                       _         <-
+                         ZIO.foreach(envWithAck) { env =>
+                           state.update(s => ZIO.succeed(s.copy(inflight = s.inflight :+ env)))
+                         }
+                     } yield envWithAck
                    } else {
                      ZIO.none
                    }
@@ -158,6 +172,7 @@ object Endpoint {
   }
 
   def make[R1, I1, T1](
+    eid: String,
     con: Connector[R1, I1, T1],
     cfg: EndpointConfig
   ): ZIO[R1 with Clock with Logging, Nothing, Endpoint[I1, T1]] = for {
@@ -165,7 +180,7 @@ object Endpoint {
     s <- RefM.make(EndpointState[I1, T1](EndpointStateDetail.Created, Chunk.empty))
     ep = new EndpointImpl[I1, T1] {
            type R = R1
-           override val id          = nextUUID.toString
+           override val id          = eid
            override val environment = r
            override val config      = cfg
            override val connector   = con
@@ -173,7 +188,8 @@ object Endpoint {
          }
   } yield new Endpoint[I1, T1] {
     type R = ep.R
-    override val id = ep.id
+    override val id                     = ep.id
+    override val config: EndpointConfig = cfg
 
     override def connect: ZIO[Clock with Logging, Throwable, Unit]                                         = ep.connect
     override def disconnect: ZIO[Clock with Logging, Throwable, Unit]                                      = ep.disconnect

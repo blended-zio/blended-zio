@@ -2,6 +2,7 @@ package blended.zio.streams
 
 import zio._
 import zio.duration._
+import zio.logging.slf4j._
 
 import zio.test._
 import zio.test.Assertion._
@@ -14,13 +15,15 @@ import MsgProperty._
 
 object FlowEnvelopeTest extends DefaultRunnableSpec {
 
-  override def spec = suite("A FlowEnvelope should")(
+  private val logEnv = Slf4jLogger.make((_, message) => message)
+
+  override def spec = (suite("A FlowEnvelope should")(
     simpleEnvelope,
     canMap,
     simpleHeader,
     zip,
     ack
-  ) @@ timed @@ timeout(3.seconds) @@ parallel
+  ) @@ timed @@ timeout(3.seconds) @@ parallel).provideCustomLayerShared(logEnv)
 
   private val simpleEnvelope = test("create an envelope from a given value with an empty set of headers") {
     val env = FlowEnvelope.make("Hello Andreas")
@@ -78,8 +81,8 @@ object FlowEnvelopeTest extends DefaultRunnableSpec {
                    .withMeta[AckHandler](
                      AckHandler.key,
                      new AckHandler {
-                       override def ack(env: FlowEnvelope[_, _])  = ref.set(true)
-                       override def deny(env: FlowEnvelope[_, _]) = ZIO.unit
+                       override def ack  = ref.set(true)
+                       override def deny = ZIO.unit
                      }
                    )
                )

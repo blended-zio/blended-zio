@@ -1,17 +1,18 @@
 package blended.zio.streams
 
 import zio._
+import zio.logging._
 
 trait AckHandler {
-  def ack(env: FlowEnvelope[_, _]): ZIO[Any, Throwable, Unit]
-  def deny(env: FlowEnvelope[_, _]): ZIO[Any, Nothing, Unit]
+  def ack: ZIO[Logging, Throwable, Unit]
+  def deny: ZIO[Logging, Nothing, Unit]
 }
 
 object AckHandler {
 
   val noop = new AckHandler {
-    override def ack(env: FlowEnvelope[_, _])  = ZIO.unit
-    override def deny(env: FlowEnvelope[_, _]) = ZIO.unit
+    override def ack  = ZIO.unit
+    override def deny = ZIO.unit
   }
 
   val key: EnvelopeMeta[AckHandler] =
@@ -20,8 +21,8 @@ object AckHandler {
       noop,
       (ah1: AckHandler, ah2: AckHandler) =>
         new AckHandler {
-          override def ack(env: FlowEnvelope[_, _])  = ah1.ack(env).flatMap(_ => ah2.ack(env))
-          override def deny(env: FlowEnvelope[_, _]) = ah1.deny(env).flatMap(_ => ah2.deny(env))
+          override def ack  = ah1.ack.flatMap(_ => ah2.ack)
+          override def deny = ah1.deny.flatMap(_ => ah2.deny)
         }
     )
 }
