@@ -59,18 +59,14 @@ object JmsStreamDemo extends App {
       _ <- log.info("ActiveMQ Broker started")
       _ <- JmsEndpoint.make(cf, "endpoint", testDest).use { ep =>
              for {
-               p        <- Promise.make[Nothing, Boolean]
-               f        <- p.complete(ZIO.succeed(true)).schedule(Schedule.duration(30.seconds)).fork
                // This will send all the messages it receives to the JMS test destination
                sink     <- ep.sink
                // This is a consumer on the JMS test destination providing a stream of Flow Envelopes
                epStream <- ep.stream
                // Kick off producing the test messages
-               _        <- stream.interruptWhen(p).run(sink).fork
+               _        <- stream.run(sink).timeout(30.seconds).fork
                // Start consuming messages // We must call ackOrDeny to clear up the inflight buffer
                _        <- epStream.foreach(env => putStrLn(env.toString()) *> env.ackOrDeny).fork
-               // After 30 seconds we want to stop
-               _        <- f.join
              } yield ()
            }
     } yield ()

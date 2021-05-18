@@ -22,6 +22,7 @@ object JmsEndpoint {
     val id = s"Endpoint-${cf.id}-${clientId}-${dest}"
   }
 
+  // Should return ZLayer ??
   def make(
     cf: JmsApiObject.JmsConnectionFactory,
     clientId: String,
@@ -57,6 +58,13 @@ object JmsEndpoint {
     consumer: JmsConsumer,
     producer: JmsProducer
   )
+
+  object JmsConnector {
+
+    // Create a JmsConnector as a Layer ??
+    // def make()
+
+  }
 
   sealed private class JmsConnector(
     ep: JmsEndpoint,
