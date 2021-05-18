@@ -4,7 +4,7 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  private val Scala213 = "2.13.5"
+  private val Scala213 = "2.13.6"
 
   private val ScalaDefault = Scala213
 
