@@ -22,7 +22,7 @@ object JNDIDemo extends App {
                Context.INITIAL_CONTEXT_FACTORY -> classOf[SolJNDIInitialContextFactory].getName(),
                Context.PROVIDER_URL            -> "smf://localhost:55555",
                Context.SECURITY_PRINCIPAL      -> "sib",
-               Context.SECURITY_CREDENTIALS    -> "sib123cd "
+               Context.SECURITY_CREDENTIALS    -> "sib123"
              )
            )
            .use { ctxt =>
@@ -31,5 +31,5 @@ object JNDIDemo extends App {
              } yield ()
            }
            .catchAll(t => ZIO.effectTotal(t.printStackTrace()))
-  } yield ExitCode.success).provideCustomLayer(logLayer)
+  } yield ExitCode.success).catchAll(_ => ZIO.succeed(ExitCode.failure)).provideCustomLayer(logLayer)
 }
