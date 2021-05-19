@@ -1,7 +1,8 @@
 package blended.zio.core.json
 
-import argonaut._
 import zio._
+
+import argonaut._
 
 object JsonSupport {
 

@@ -1,19 +1,20 @@
 package blended.zio.jmx.publish
 
 import java.util.Date
-
-import blended.zio.jmx.JmxObjectName
-import javax.management.{ MBeanAttributeInfo, ObjectName }
+import java.{ lang => jl, math => jm }
 import javax.management.openmbean._
+import javax.management.{ MBeanAttributeInfo, ObjectName }
+
+import scala.jdk.CollectionConverters._
+import scala.reflect.ClassTag
+
 import zio.duration._
 import zio.random.Random
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
-import scala.reflect.ClassTag
-import scala.jdk.CollectionConverters._
-import java.{ lang => jl, math => jm }
+import blended.zio.jmx.JmxObjectName
 
 object OpenMBeanMapperTest extends DefaultRunnableSpec {
 

@@ -1,5 +1,9 @@
 package blended.zio.jolokia
 
+import java.net.URLEncoder
+
+import scala.util._
+
 import zio._
 import zio.blocking._
 import zio.logging._
@@ -7,10 +11,7 @@ import zio.logging._
 import argonaut._
 import sttp.client3._
 
-import scala.util._
-
 import JolokiaObject._
-import java.net.URLEncoder
 
 trait JolokiaClient {
   def version: ZIO[Logging with Blocking, Throwable, JolokiaVersion]

@@ -1,13 +1,14 @@
 package blended.zio.itest.container
 
-import zio._
-import scala.language.implicitConversions
-
 import java.time.Duration
 
+import scala.language.implicitConversions
+
+import zio._
+
 import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 
 class SolaceJMS(adminUser: String, adminPassword: String)
   extends GenericContainer(

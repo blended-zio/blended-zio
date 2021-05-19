@@ -1,9 +1,10 @@
 package blended.zio.activemq
 
 import zio._
-import org.apache.activemq.broker.BrokerService
 import zio.blocking._
 import zio.logging._
+
+import org.apache.activemq.broker.BrokerService
 
 object AMQBroker {
 

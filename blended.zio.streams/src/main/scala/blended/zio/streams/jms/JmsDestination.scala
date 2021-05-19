@@ -3,6 +3,7 @@ package blended.zio.streams.jms
 import javax.jms._
 
 import zio._
+
 import JmsApiObject._
 
 sealed trait JmsDestination {

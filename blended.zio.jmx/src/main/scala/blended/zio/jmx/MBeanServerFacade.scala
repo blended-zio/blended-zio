@@ -1,13 +1,13 @@
 package blended.zio.jmx
 
 import java.lang.management.ManagementFactory
-
 import javax.management.{ MBeanAttributeInfo, MBeanServer, ObjectName }
-import zio._
-import zio.logging._
 
 import scala.collection.mutable
 import scala.util.Try
+
+import zio._
+import zio.logging._
 
 object MBeanServerFacade {
 

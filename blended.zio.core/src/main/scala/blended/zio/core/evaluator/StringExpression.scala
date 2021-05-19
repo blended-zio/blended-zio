@@ -1,8 +1,9 @@
 package blended.zio.core.evaluator
 
+import java.util.regex.Pattern
+
 import zio._
 import zio.logging._
-import java.util.regex.Pattern
 
 // doctag<expression>
 sealed trait StringExpression

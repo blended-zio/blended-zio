@@ -1,9 +1,9 @@
 package blended.zio.itest.container
 
-import com.dimafeng.testcontainers.GenericContainer
-
 import zio._
 import zio.blocking._
+
+import com.dimafeng.testcontainers.GenericContainer
 
 trait TestContainer[T <: GenericContainer] {
 

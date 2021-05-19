@@ -2,7 +2,6 @@ package blended.zio.jmx.publish
 
 import java.util.Date
 import java.{ lang => jl, math => jm, util => ju }
-
 import javax.management.openmbean._
 import javax.management.{ DynamicMBean, MBeanNotificationInfo, ObjectName }
 

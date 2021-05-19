@@ -1,7 +1,7 @@
 package blended.zio.jmx.publish
 
-import javax.management.openmbean.OpenType
 import javax.management._
+import javax.management.openmbean.OpenType
 
 private[publish] class GenericImmutableOpenMBean(
   mBeanInfo: MBeanInfo,

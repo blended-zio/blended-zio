@@ -1,9 +1,11 @@
 package blended.zio.core.config
 
 import zio._
-import zio.config._, ConfigDescriptor._
+import zio.config._
 
 import blended.zio.core.evaluator._
+
+import ConfigDescriptor._
 
 // doctag<descriptor>
 sealed abstract case class LazyConfigString(value: String)

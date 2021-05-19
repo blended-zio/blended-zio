@@ -5,9 +5,10 @@ import zio.duration._
 import zio.logging._
 import zio.stream._
 
+import blended.zio.streams.FlowEnvelope
+
 import JmsApiObject._
 import JmsApi._
-import blended.zio.streams.FlowEnvelope
 
 object RecoveringJmsStream {
 

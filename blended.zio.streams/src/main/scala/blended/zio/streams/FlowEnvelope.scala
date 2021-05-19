@@ -1,8 +1,10 @@
 package blended.zio.streams
 
-import zio._
-import blended.zio.core.Zipped._
 import java.util.UUID
+
+import zio._
+
+import blended.zio.core.Zipped._
 
 final case class FlowEnvelope[+I, +C](
   id: I,

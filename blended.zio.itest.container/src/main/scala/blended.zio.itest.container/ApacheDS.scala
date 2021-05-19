@@ -4,10 +4,10 @@ import scala.language.implicitConversions
 
 import zio._
 
+import blended.zio.itest.condition.LDAPAvailableCondition.LDAPConnectionData
+
 import com.dimafeng.testcontainers.GenericContainer
 import org.testcontainers.containers.Network
-
-import blended.zio.itest.condition.LDAPAvailableCondition.LDAPConnectionData
 
 class ApacheDS extends GenericContainer("blended/apacheds-alpine:1.0.1", exposedPorts = Seq(ApacheDS.ldapPort))
 

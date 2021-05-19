@@ -1,22 +1,21 @@
 package blended.zio.itest
 
-import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
 
 import zio._
-import zio.console._
 import zio.clock._
+import zio.console._
 import zio.duration._
 import zio.logging.slf4j._
-
-import org.apache.activemq.broker.BrokerService
-import org.apache.activemq.ActiveMQConnectionFactory
 import zio.stream.ZStream
 
 import blended.zio.activemq.AMQBroker
-
 import blended.zio.streams._
 import blended.zio.streams.jms._
+
+import org.apache.activemq.ActiveMQConnectionFactory
+import org.apache.activemq.broker.BrokerService
 
 import JmsApi._
 import JmsApiObject._

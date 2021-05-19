@@ -1,12 +1,15 @@
 package blended.zio.itest
 
-import zio._
-import zio.logging._
-import zio.console._
-import blended.zio.core.jndi.JNDISupport
-import javax.naming.Context
-import com.solacesystems.jndi.SolJNDIInitialContextFactory
 import javax.jms.ConnectionFactory
+import javax.naming.Context
+
+import zio._
+import zio.console._
+import zio.logging._
+
+import blended.zio.core.jndi.JNDISupport
+
+import com.solacesystems.jndi.SolJNDIInitialContextFactory
 
 object JNDIDemo extends App {
   val logLayer = Logging.console(

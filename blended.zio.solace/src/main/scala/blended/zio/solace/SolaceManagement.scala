@@ -3,22 +3,21 @@ package blended.zio.solace
 import java.net.URLEncoder
 import javax.naming.{ Context => NamingContext }
 
-import argonaut._
-import argonaut.Argonaut._
-
 import zio._
-import zio.duration._
 import zio.blocking._
+import zio.duration._
 import zio.logging._
 
+import blended.zio.core.jndi.JNDISupport
+import blended.zio.core.json.JsonSupport
+
+import argonaut.Argonaut._
+import argonaut._
+import com.solacesystems.jms.SupportedProperty
+import com.solacesystems.jndi.SolJNDIInitialContextFactory
 import sttp.client3._
 
 import SolaceManagement.SolaceMgmtConnection
-
-import blended.zio.core.jndi.JNDISupport
-import com.solacesystems.jndi.SolJNDIInitialContextFactory
-import com.solacesystems.jms.SupportedProperty
-import blended.zio.core.json.JsonSupport
 
 class SolaceManagement(conn: SolaceMgmtConnection) {
 

@@ -1,12 +1,12 @@
 package blended.zio.jolokia
 
 import zio._
-import zio.logging._
-
 import zio.duration._
-import zio.test._
+import zio.logging._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
+
 import JolokiaClient._
 
 object JolokiaClientTest extends DefaultRunnableSpec {

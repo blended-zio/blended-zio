@@ -3,6 +3,7 @@ package blended.zio.itest
 import scala.reflect.ClassTag
 
 import zio.test._
+
 import blended.zio.streams._
 
 object EnvelopeAssertion {

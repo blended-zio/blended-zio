@@ -1,6 +1,7 @@
 package blended.zio.streams.jms
 
 import zio._
+
 import blended.zio.streams.MsgProperty
 
 sealed trait JmsMessageSelector {

@@ -1,11 +1,11 @@
 package blended.zio.core.evaluator
 
 import zio._
-import zio.logging.slf4j._
 import zio.duration._
-import zio.test._
+import zio.logging.slf4j._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
 object StringEvaluatorTest extends DefaultRunnableSpec {
 

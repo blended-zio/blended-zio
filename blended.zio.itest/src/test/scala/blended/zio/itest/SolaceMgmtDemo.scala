@@ -1,15 +1,14 @@
 package blended.zio.itest
 
+import javax.jms.ConnectionFactory
+import javax.naming.{ Context => NamingContext }
+
 import zio._
 import zio.console._
-
 import zio.logging.slf4j.Slf4jLogger
 
 import blended.zio.core.jndi.JNDISupport
 import blended.zio.solace.SolaceManagement
-
-import javax.naming.{ Context => NamingContext }
-import javax.jms.ConnectionFactory
 
 object SolaceMgmtDemo extends App {
 

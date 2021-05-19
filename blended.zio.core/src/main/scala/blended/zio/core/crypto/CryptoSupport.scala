@@ -1,12 +1,13 @@
 package blended.zio.core.crypto
 
-import javax.crypto.Cipher
+import java.io.IOException
 import java.security.Key
+import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-import zio._
-import java.io.IOException
 import scala.io.Source
+
+import zio._
 
 abstract class CryptoException(msg: String) extends Exception(msg) {
 

@@ -1,21 +1,21 @@
 package blended.zio.itest
 
-import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
 import java.util.Hashtable
+import java.util.concurrent.TimeUnit
 
 import zio._
-import zio.console._
 import zio.clock._
+import zio.console._
 import zio.duration._
 import zio.logging.slf4j._
-
 import zio.stream.ZStream
-
-import com.solacesystems.jms.SolJmsUtility
 
 import blended.zio.streams._
 import blended.zio.streams.jms._
+
+import com.solacesystems.jms.SolJmsUtility
+
 import JmsApi._
 import JmsApiObject._
 import JmsDestination._

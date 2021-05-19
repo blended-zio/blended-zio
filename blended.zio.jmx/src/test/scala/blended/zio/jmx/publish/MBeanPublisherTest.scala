@@ -1,8 +1,8 @@
 package blended.zio.jmx.publish
 
-import blended.zio.jmx.publish.ProductMBeanPublisher.IncompatibleJmxUpdateException
-import blended.zio.jmx.{ JmxObjectName, MBeanServerFacade }
 import javax.management.InstanceNotFoundException
+
+import scala.annotation.nowarn
 
 import zio._
 import zio.duration._
@@ -10,7 +10,9 @@ import zio.logging.slf4j._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
-import scala.annotation.nowarn
+
+import blended.zio.jmx.publish.ProductMBeanPublisher.IncompatibleJmxUpdateException
+import blended.zio.jmx.{ JmxObjectName, MBeanServerFacade }
 
 object MBeanPublisherTest extends DefaultRunnableSpec {
 
@@ -24,14 +26,12 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
     (logSlf4j >>> ProductMBeanPublisher.live) ++ (logSlf4j >>> MBeanServerFacade.live)
   // end:doctag<layer>
 
-  // scalafix:off
   override def spec = suite("The MBeanPublisher should")(
     simplePublish,
     simpleUpdate,
     incompatible,
     remove
   ).provideCustomLayer(jmxLayer) @@ timed @@ timeoutWarning(1.minute) @@ parallel
-  // scalafix:on
 
   // doctag<simple>
   private val simplePublish = testM("publish a simple case class")(for {

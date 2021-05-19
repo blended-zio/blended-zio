@@ -3,14 +3,13 @@ package blended.zio.streams
 import zio._
 import zio.duration._
 import zio.logging.slf4j._
-
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
 import blended.zio.itest.EnvelopeAssertion._
-
 import blended.zio.streams._
+
 import MsgProperty._
 
 object FlowEnvelopeTest extends DefaultRunnableSpec {

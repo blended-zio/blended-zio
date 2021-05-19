@@ -1,11 +1,12 @@
 package blended.zio.itest.container
 
-import scala.language.implicitConversions
 import java.time.Duration
 
+import scala.language.implicitConversions
+
 import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 import org.testcontainers.containers.Network
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 
 class Splunk
   extends GenericContainer(

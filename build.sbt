@@ -22,7 +22,12 @@ inThisBuild(
     pgpSecretRing := file("/tmp/secret.asc"),
     scmInfo := Some(
       ScmInfo(url("https://github.com/blended-zio/blended-zio/"), "scm:git:git@github.com:blended-zio/blended-zio.git")
-    )
+    ),
+    semanticdbEnabled := true,
+    semanticdbOptions += "-P:semanticdb:synthetics:on",
+    semanticdbVersion := "4.4.18",
+    scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
   )
 )
 

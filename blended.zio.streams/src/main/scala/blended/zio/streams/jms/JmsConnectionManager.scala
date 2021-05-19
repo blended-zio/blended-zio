@@ -1,14 +1,14 @@
 package blended.zio.streams.jms
 
-import javax.jms._
-import java.util.concurrent.TimeUnit
 import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
+import javax.jms._
 
 import zio._
-import zio.stream._
-import zio.clock._
 import zio.blocking._
+import zio.clock._
 import zio.logging._
+import zio.stream._
 
 import blended.zio.streams._
 

@@ -1,8 +1,8 @@
 package blended.zio.itest.condition
 
-import javax.naming.directory.InitialDirContext
 import java.util.Hashtable
 import javax.naming.Context
+import javax.naming.directory.InitialDirContext
 
 import zio._
 import zio.blocking._

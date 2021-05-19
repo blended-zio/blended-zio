@@ -1,12 +1,13 @@
 package blended.zio.streams.jms
 
 import javax.jms._
-import scala.jdk.CollectionConverters._
 
-import blended.zio.streams._
+import scala.jdk.CollectionConverters._
 
 import zio._
 import zio.blocking._
+
+import blended.zio.streams._
 
 import JmsApi._
 import JmsApiObject._

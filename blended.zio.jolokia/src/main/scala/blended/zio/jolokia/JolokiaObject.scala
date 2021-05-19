@@ -1,7 +1,8 @@
 package blended.zio.jolokia
 
-import argonaut._
 import blended.zio.core.json.JsonSupport._
+
+import argonaut._
 
 sealed trait JolokiaObject
 

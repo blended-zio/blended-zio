@@ -1,12 +1,12 @@
 package blended.zio.core.evaluator
 
-import blended.zio.core.crypto.CryptoSupport
-
 import zio._
 import zio.duration._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
+
+import blended.zio.core.crypto.CryptoSupport
 
 object EncryptedModifierTest extends DefaultRunnableSpec {
 

@@ -4,6 +4,7 @@ import javax.management.ObjectName
 import javax.management.openmbean.{ CompositeData, TabularData }
 
 import scala.jdk.CollectionConverters._
+
 import zio._
 
 object JmxAttributeCompanion {

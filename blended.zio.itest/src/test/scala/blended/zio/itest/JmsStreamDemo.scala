@@ -1,5 +1,8 @@
 package blended.zio.itest
 
+import java.text.SimpleDateFormat
+import java.util.concurrent._
+
 import zio._
 import zio.clock._
 import zio.console._
@@ -8,18 +11,16 @@ import zio.logging._
 import zio.logging.slf4j._
 import zio.stream._
 
-import org.apache.activemq.broker.BrokerService
-import org.apache.activemq.ActiveMQConnectionFactory
-
 import blended.zio.activemq.AMQBroker
-
 import blended.zio.streams._
 import blended.zio.streams.jms._
+
+import org.apache.activemq.ActiveMQConnectionFactory
+import org.apache.activemq.broker.BrokerService
+
 import JmsApi._
 import JmsApiObject._
 import JmsDestination._
-import java.util.concurrent._
-import java.text.SimpleDateFormat
 
 object JmsStreamDemo extends App {
 

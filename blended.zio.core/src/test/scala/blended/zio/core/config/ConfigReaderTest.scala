@@ -1,18 +1,15 @@
 package blended.zio.core.config
 
-import blended.zio.core.crypto._
-
 import zio._
-import zio.logging._
-import zio.duration._
-
 import zio.config._
-
+import zio.duration._
+import zio.logging._
 import zio.logging.slf4j.Slf4jLogger
-
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
+
+import blended.zio.core.crypto._
 import blended.zio.core.evaluator._
 
 object ConfigReaderTest extends DefaultRunnableSpec {

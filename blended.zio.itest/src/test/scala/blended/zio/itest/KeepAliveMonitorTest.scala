@@ -1,16 +1,13 @@
 package blended.zio.itest
 
-import zio.test.DefaultRunnableSpec
-
 import zio._
 import zio.duration._
-
 import zio.logging._
 import zio.logging.slf4j._
-
-import zio.test._
 import zio.test.Assertion._
+import zio.test.DefaultRunnableSpec
 import zio.test.TestAspect._
+import zio.test._
 
 import blended.zio.streams._
 

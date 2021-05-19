@@ -2,6 +2,7 @@ import sbt._
 import sbt.Keys._
 import sbtbuildinfo._
 import BuildInfoKeys._
+import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
   private val Scala213 = "2.13.6"

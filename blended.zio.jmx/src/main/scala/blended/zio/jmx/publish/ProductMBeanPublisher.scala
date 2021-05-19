@@ -1,16 +1,17 @@
 package blended.zio.jmx.publish
 
 import java.lang.management.ManagementFactory
-
 import javax.management._
+
+import scala.util.Try
+
 import zio._
 import zio.logging._
 import zio.stm._
 
-import scala.util.Try
+import blended.zio.jmx.JmxObjectName
 
 import Nameable._
-import blended.zio.jmx.JmxObjectName
 
 object ProductMBeanPublisher {
 

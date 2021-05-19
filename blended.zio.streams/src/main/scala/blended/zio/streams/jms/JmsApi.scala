@@ -3,18 +3,18 @@ package blended.zio.streams.jms
 import javax.jms._
 
 import zio._
-import zio.logging._
 import zio.blocking._
-import zio.stream._
 import zio.duration._
+import zio.logging._
+import zio.stream._
+
+import blended.zio.core.RuntimeId
+import blended.zio.streams.FlowEnvelope
 
 import JmsConnectionManager._
 import JmsDestination._
 import JmsApiObject._
-
-import blended.zio.core.RuntimeId
 import RuntimeId.RuntimeIdService
-import blended.zio.streams.FlowEnvelope
 
 object JmsApi {
 

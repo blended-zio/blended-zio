@@ -1,9 +1,9 @@
 package blended.zio.streams
 
 import zio._
+import zio.clock._
 import zio.duration._
 import zio.logging._
-import zio.clock._
 
 class KeepAliveException(val id: String, val count: Int)
   extends Exception(

@@ -3,20 +3,18 @@ package blended.zio.jmx
 import zio._
 import zio.duration._
 import zio.logging.slf4j._
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
 object MBeanServerTest extends DefaultRunnableSpec {
 
-  // scalafix:off
   override def spec = suite("The JvmMBeanServer should")(
     allMBeanNames,
     existingMBeanName,
     specificMBeanName,
     someMBeanNames
   ).provideCustomLayerShared(mbeanLayer) @@ timed @@ timeoutWarning(1.minute) @@ parallel
-  // scalafix:on
 
   // doctag<zlayer>
   private val logSlf4j = Slf4jLogger.make((_, message) => message)

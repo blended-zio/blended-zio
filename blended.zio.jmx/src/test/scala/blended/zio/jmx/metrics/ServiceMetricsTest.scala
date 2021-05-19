@@ -2,16 +2,16 @@ package blended.zio.jmx.metrics
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import blended.zio.jmx.metrics.ServiceMetrics.{ ServiceAlreadyStartedException, ServiceInvocationNotFoundException }
 import zio._
-import zio.test._
 import zio.duration._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
+
+import blended.zio.jmx.metrics.ServiceMetrics.{ ServiceAlreadyStartedException, ServiceInvocationNotFoundException }
 
 object ServiceMetricsTest extends DefaultRunnableSpec {
 
-  // scalafix:off
   override def spec = suite("The ConcurrentServiceMetrics should")(
     recordStarted,
     recordComplete,
@@ -19,7 +19,6 @@ object ServiceMetricsTest extends DefaultRunnableSpec {
     failOnDuplicate,
     failOnUnstarted
   ).provideCustomLayer(ServiceMetrics.live) @@ timed @@ timeoutWarning(1.minute)
-  // scalafix:on
 
   private val recordStarted = testM("record a service started invocation correctly") {
     for {

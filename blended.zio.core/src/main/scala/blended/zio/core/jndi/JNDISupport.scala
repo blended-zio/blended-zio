@@ -1,11 +1,12 @@
 package blended.zio.core.jndi
 
+import java.util.Hashtable
 import javax.naming._
+
+import scala.reflect.ClassTag
 
 import zio._
 import zio.logging._
-import java.util.Hashtable
-import scala.reflect.ClassTag
 
 object JNDISupport {
 
