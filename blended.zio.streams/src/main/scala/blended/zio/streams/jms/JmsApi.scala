@@ -9,12 +9,12 @@ import zio.logging._
 import zio.stream._
 
 import blended.zio.core.RuntimeId
+import blended.zio.core.RuntimeId.RuntimeIdService
 import blended.zio.streams.FlowEnvelope
 
 import JmsConnectionManager._
 import JmsDestination._
 import JmsApiObject._
-import RuntimeId.RuntimeIdService
 
 object JmsApi {
 
