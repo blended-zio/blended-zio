@@ -27,7 +27,7 @@ object Dependencies {
 
   val amqBroker      = "org.apache.activemq"            % "activemq-broker"               % vAmq
   val amqKahaDb      = "org.apache.activemq"            % "activemq-kahadb-store"         % vAmq
-  val argonaut       = "io.argonaut"                   %% "argonaut"                      % "6.3.3"
+  val argonaut       = "io.argonaut"                   %% "argonaut"                      % "6.3.6"
   val jolokiaJvm     = "org.jolokia"                    % "jolokia-jvm"                   % vJolokia
   val jolokiaAgent   = jolokiaJvm.classifier("agent")
   val jms_1_1        = "org.apache.geronimo.specs"      % "geronimo-jms_1.1_spec"         % "1.1.1"
