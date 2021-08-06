@@ -13,14 +13,13 @@ import zio.stream._
 
 import blended.zio.activemq.AMQBroker
 import blended.zio.streams._
+import blended.zio.streams.jms.JmsApi._
+import blended.zio.streams.jms.JmsApiObject._
+import blended.zio.streams.jms.JmsDestination._
 import blended.zio.streams.jms._
 
 import org.apache.activemq.ActiveMQConnectionFactory
 import org.apache.activemq.broker.BrokerService
-
-import JmsApi._
-import JmsApiObject._
-import JmsDestination._
 
 object JmsStreamDemo extends App {
 

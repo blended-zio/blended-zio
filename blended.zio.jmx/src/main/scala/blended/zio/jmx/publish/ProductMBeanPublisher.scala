@@ -10,8 +10,7 @@ import zio.logging._
 import zio.stm._
 
 import blended.zio.jmx.JmxObjectName
-
-import Nameable._
+import blended.zio.jmx.publish.Nameable._
 
 object ProductMBeanPublisher {
 

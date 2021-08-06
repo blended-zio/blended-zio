@@ -8,10 +8,10 @@ import zio._
 import zio.blocking._
 import zio.logging._
 
+import blended.zio.jolokia.JolokiaObject._
+
 import argonaut._
 import sttp.client3._
-
-import JolokiaObject._
 
 trait JolokiaClient {
   def version: ZIO[Logging with Blocking, Throwable, JolokiaVersion]

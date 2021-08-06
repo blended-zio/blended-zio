@@ -7,7 +7,7 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 
-import JolokiaClient._
+import blended.zio.jolokia.JolokiaClient._
 
 object JolokiaClientTest extends DefaultRunnableSpec {
 

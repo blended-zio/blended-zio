@@ -8,9 +8,8 @@ import zio._
 import zio.blocking._
 
 import blended.zio.streams._
-
-import JmsApi._
-import JmsApiObject._
+import blended.zio.streams.jms.JmsApi._
+import blended.zio.streams.jms.JmsApiObject._
 
 object JmsEndpoint {
 

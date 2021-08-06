@@ -6,9 +6,8 @@ import zio.logging._
 import zio.stream._
 
 import blended.zio.streams.FlowEnvelope
-
-import JmsApiObject._
-import JmsApi._
+import blended.zio.streams.jms.JmsApi._
+import blended.zio.streams.jms.JmsApiObject._
 
 object RecoveringJmsStream {
 

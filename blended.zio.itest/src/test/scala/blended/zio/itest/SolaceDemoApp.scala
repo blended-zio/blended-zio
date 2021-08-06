@@ -12,13 +12,12 @@ import zio.logging.slf4j._
 import zio.stream.ZStream
 
 import blended.zio.streams._
+import blended.zio.streams.jms.JmsApi._
+import blended.zio.streams.jms.JmsApiObject._
+import blended.zio.streams.jms.JmsDestination._
 import blended.zio.streams.jms._
 
 import com.solacesystems.jms.SolJmsUtility
-
-import JmsApi._
-import JmsApiObject._
-import JmsDestination._
 
 object SolaceDemoApp extends App {
 

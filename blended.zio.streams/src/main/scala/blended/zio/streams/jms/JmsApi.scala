@@ -11,10 +11,9 @@ import zio.stream._
 import blended.zio.core.RuntimeId
 import blended.zio.core.RuntimeId.RuntimeIdService
 import blended.zio.streams.FlowEnvelope
-
-import JmsConnectionManager._
-import JmsDestination._
-import JmsApiObject._
+import blended.zio.streams.jms.JmsApiObject._
+import blended.zio.streams.jms.JmsConnectionManager._
+import blended.zio.streams.jms.JmsDestination._
 
 object JmsApi {
 

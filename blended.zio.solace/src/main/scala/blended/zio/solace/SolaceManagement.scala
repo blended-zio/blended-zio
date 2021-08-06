@@ -10,14 +10,13 @@ import zio.logging._
 
 import blended.zio.core.jndi.JNDISupport
 import blended.zio.core.json.JsonSupport
+import blended.zio.solace.SolaceManagement.SolaceMgmtConnection
 
 import argonaut.Argonaut._
 import argonaut._
 import com.solacesystems.jms.SupportedProperty
 import com.solacesystems.jndi.SolJNDIInitialContextFactory
 import sttp.client3._
-
-import SolaceManagement.SolaceMgmtConnection
 
 class SolaceManagement(conn: SolaceMgmtConnection) {
 

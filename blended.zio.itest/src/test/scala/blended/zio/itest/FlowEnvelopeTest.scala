@@ -8,9 +8,8 @@ import zio.test.TestAspect._
 import zio.test._
 
 import blended.zio.itest.EnvelopeAssertion._
+import blended.zio.streams.MsgProperty._
 import blended.zio.streams._
-
-import MsgProperty._
 
 object FlowEnvelopeTest extends DefaultRunnableSpec {
 

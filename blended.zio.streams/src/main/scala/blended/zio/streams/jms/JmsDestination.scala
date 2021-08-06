@@ -4,7 +4,7 @@ import javax.jms._
 
 import zio._
 
-import JmsApiObject._
+import blended.zio.streams.jms.JmsApiObject._
 
 sealed trait JmsDestination {
   val name: String
