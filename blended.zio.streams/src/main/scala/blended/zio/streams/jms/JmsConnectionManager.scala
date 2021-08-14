@@ -33,9 +33,9 @@ object JmsConnectionManager {
     def shutdown: ZIO[JmsEnv, Nothing, Unit]
   }
 
-  def default: ZLayer[Any, Nothing, JmsConnectionManagerService] = ZLayer.fromEffect(makeService)
+  val default: ZLayer[Any, Nothing, JmsConnectionManagerService] = ZLayer.fromEffect(makeService)
 
-  private val makeService: ZIO[Any, Nothing, Service] = for {
+  private lazy val makeService: ZIO[Any, Nothing, Service] = for {
     cons <- Ref.make(Map.empty[String, JmsConnection])
     rec  <- Ref.make[Chunk[String]](Chunk.empty)
     s    <- Semaphore.make(1)

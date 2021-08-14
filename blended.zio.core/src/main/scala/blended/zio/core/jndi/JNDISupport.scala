@@ -16,7 +16,7 @@ object JNDISupport {
     new InitialContext(htEnv)
   } <* log.info(s"Created Initial Context Factory with ${env.mkString("\n", "\n", "")}")).refineOrDie {
     case ne: NamingException => ne
-  })(ctxt => ZIO.effect(ctxt.close()).orDie)
+  })(ctxt => ZIO.effect(ctxt.close()).ignore)
 
   def bind(ctxt: Context, name: String, ref: Any): ZIO[Logging, NamingException, Unit] = for {
     _ <- log.info(s"Binding [$ref] to [$name]")

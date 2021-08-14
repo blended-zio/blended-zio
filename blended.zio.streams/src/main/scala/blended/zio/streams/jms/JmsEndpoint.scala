@@ -17,6 +17,7 @@ object JmsEndpoint {
     cf: JmsApiObject.JmsConnectionFactory,
     clientId: String,
     dest: JmsDestination,
+    receive: Boolean,
     selector: Option[JmsMessageSelector]
   ) {
     val id = s"Endpoint-${cf.id}-${clientId}-${dest}"
@@ -27,9 +28,10 @@ object JmsEndpoint {
     cf: JmsApiObject.JmsConnectionFactory,
     clientId: String,
     dest: JmsDestination,
+    receive: Boolean = true,
     selector: Option[JmsMessageSelector] = None
   ): ZManaged[JmsApi.JmsEnv, Throwable, Endpoint[String, JmsMessageBody]] = (for {
-    ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, selector))
+    ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, receive, selector))
     con <- connector(ep)
     ep  <- Endpoint.make(ep.id, con, Endpoint.defaultEndpointConfig)
     _   <- ep.connect
@@ -55,16 +57,9 @@ object JmsEndpoint {
 
   private case class JmsEndpointState(
     session: JmsSession,
-    consumer: JmsConsumer,
+    consumer: Option[JmsConsumer],
     producer: JmsProducer
   )
-
-  object JmsConnector {
-
-    // Create a JmsConnector as a Layer ??
-    // def make()
-
-  }
 
   sealed private class JmsConnector(
     ep: JmsEndpoint,
@@ -77,7 +72,7 @@ object JmsEndpoint {
           for {
             con  <- JmsApi.connect(ep.cf, ep.clientId)
             sess <- JmsApi.createSession_(con)
-            cons <- JmsApi.createConsumer_(sess, ep.dest)
+            cons <- if (ep.receive) JmsApi.createConsumer_(sess, ep.dest).map(Some(_)) else ZIO.none
             prod <- JmsApi.createProducer_(sess)
           } yield Some(JmsEndpointState(sess, cons, prod))
         case v @ Some(_) => ZIO.succeed(v)
@@ -87,7 +82,10 @@ object JmsEndpoint {
     def stop = state.update {
       _ match {
         case Some(v) =>
-          JmsApi.closeConsumer_(v.consumer) *> JmsApi.closeProducer_(v.producer) *> JmsApi.closeSession_(
+          (v.consumer match {
+            case None    => ZIO.none
+            case Some(c) => JmsApi.closeConsumer_(c)
+          }) *> JmsApi.closeProducer_(v.producer) *> JmsApi.closeSession_(
             v.session
           ) *> ZIO.none
         case None    => ZIO.succeed(None)
@@ -98,7 +96,11 @@ object JmsEndpoint {
       cs       <- state.get
       maybeMsg <- cs match {
                     case None    => ZIO.none
-                    case Some(v) => JmsApi.receive(v.consumer)
+                    case Some(v) =>
+                      v.consumer match {
+                        case None    => ZIO.none
+                        case Some(c) => JmsApi.receive(c)
+                      }
                   }
       maybeEnv  = maybeMsg.map { m =>
                     val h = extractHeader(m)
