@@ -213,7 +213,7 @@ object Endpoint {
       _ <- stop.updateSome { case None => Promise.make[Nothing, Boolean].map(Some(_)) }
       p <- stop.get.flatMap {
              _ match {
-               case None    => ZIO.fail(new IllegalStateException("Shouldnt happen"))
+               case None    => ZIO.fail(new IllegalStateException("Shouldn't happen"))
                case Some(v) => ZIO.succeed(v)
              }
            }
