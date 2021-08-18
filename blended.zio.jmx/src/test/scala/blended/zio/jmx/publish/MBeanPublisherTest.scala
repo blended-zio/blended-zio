@@ -21,8 +21,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   // doctag<layer>
   private val logSlf4j = Slf4jLogger.make((_, message) => message)
 
-  private val jmxLayer
-    : ZLayer[Any, Nothing, ProductMBeanPublisher.ProductMBeanPublisher with Has[MBeanServerFacade.MBeanServerSvc]] =
+  private val jmxLayer =
     (logSlf4j >>> ProductMBeanPublisher.live) ++ (logSlf4j >>> MBeanServerFacade.live)
   // end:doctag<layer>
 
@@ -35,7 +34,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
 
   // doctag<simple>
   private val simplePublish = testM("publish a simple case class")(for {
-    pub  <- ZIO.service[ProductMBeanPublisher.Service]
+    pub  <- ZIO.service[ProductMBeanPublisher.MBeanPublisherSvc]
     fac  <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     cc   <- ZIO.succeed(Simple("test1", 0, "Hello Jmx"))
     info <- pub.updateMBean(cc) >>> fac.mbeanInfo(objectName(cc))
@@ -49,7 +48,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   // end:doctag<simple>
 
   private val simpleUpdate = testM("publish updates for a simple case class")(for {
-    pub  <- ZIO.service[ProductMBeanPublisher.Service]
+    pub  <- ZIO.service[ProductMBeanPublisher.MBeanPublisherSvc]
     fac  <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     cc   <- ZIO.succeed(Simple("test2", 0, "Hello Jmx"))
     _    <- pub.updateMBean(cc)
@@ -64,7 +63,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   })
 
   private val incompatible = testM("deny incompatible updates")(for {
-    pub <- ZIO.service[ProductMBeanPublisher.Service]
+    pub <- ZIO.service[ProductMBeanPublisher.MBeanPublisherSvc]
     s1  <- ZIO.succeed(Simple("test3", 0, "Hello Jmx"))
     s2  <- ZIO.succeed(Simple2("test3", 0L))
     _   <- pub.updateMBean(s1)
@@ -72,7 +71,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   } yield assert(r)(fails(equalTo(new IncompatibleJmxUpdateException(classOf[Simple2], classOf[Simple])))))
 
   private val remove = testM("allow to remove a registered MBean")(for {
-    pub <- ZIO.service[ProductMBeanPublisher.Service]
+    pub <- ZIO.service[ProductMBeanPublisher.MBeanPublisherSvc]
     cc  <- ZIO.succeed(Simple("test4", 0, "Hello Jmx"))
     fac <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     _   <- pub.updateMBean(cc)
