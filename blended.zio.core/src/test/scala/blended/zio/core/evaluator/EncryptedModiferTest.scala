@@ -10,7 +10,7 @@ import blended.zio.core.crypto.CryptoSupport
 
 object EncryptedModifierTest extends DefaultRunnableSpec {
 
-  private val cryptoDefault: ZLayer[Any, Nothing, CryptoSupport.CryptoSupport] =
+  private val cryptoDefault =
     CryptoSupport.default.orDie
 
   private val encMod: ZIO[Any, Nothing, Modifier] = EncryptedModifier.create.provideLayer(cryptoDefault)
@@ -21,7 +21,7 @@ object EncryptedModifierTest extends DefaultRunnableSpec {
         s <- Gen.stringBounded(1, 100)(Gen.anyASCIIChar)
       } yield s) { value =>
         for {
-          cs  <- ZIO.service[CryptoSupport.Service]
+          cs  <- ZIO.service[CryptoSupport.CryptoSvc]
           dec <- cs.encrypt(value)
           mod <- encMod
           res <- mod.op(dec, "")

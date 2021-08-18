@@ -19,13 +19,12 @@ object MBeanServerTest extends DefaultRunnableSpec {
   // doctag<zlayer>
   private val logSlf4j = Slf4jLogger.make((_, message) => message)
 
-  private val mbeanLayer: ZLayer[Any, Nothing, MBeanServerFacade.MBeanServerFacade] =
-    logSlf4j >>> MBeanServerFacade.live
+  private val mbeanLayer = logSlf4j >>> MBeanServerFacade.live
   // end:doctag<zlayer>
 
   private val allMBeanNames = testM("allow to retrieve all mbean names in a plain JVM")(
     for {
-      svr   <- ZIO.service[MBeanServerFacade.Service]
+      svr   <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
       names <- svr.allMbeanNames()
     } yield (
       assert(names)(isNonEmpty)
@@ -34,7 +33,7 @@ object MBeanServerTest extends DefaultRunnableSpec {
 
   private val specificMBeanName = testM("allow to retrieve a specific mbean name")(
     for {
-      svr   <- ZIO.service[MBeanServerFacade.Service]
+      svr   <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
       on    <- JmxObjectName.make("java.lang:type=Memory")
       names <- svr.mbeanNames(Some(on))
     } yield (
@@ -45,7 +44,7 @@ object MBeanServerTest extends DefaultRunnableSpec {
 
   private val someMBeanNames = testM("Allow to query for a group of names")(
     for {
-      svr   <- ZIO.service[MBeanServerFacade.Service]
+      svr   <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
       on    <- JmxObjectName.make("java.lang:type=MemoryPool")
       names <- svr.mbeanNames(Some(on))
       anc   <- ZIO.collect(names)(n => on.isAncestor(n))
@@ -55,7 +54,7 @@ object MBeanServerTest extends DefaultRunnableSpec {
 
   private val existingMBeanName = testM("map an existing mbean to a MBean Info object")(
     for {
-      svr   <- ZIO.service[MBeanServerFacade.Service]
+      svr   <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
       names <- svr.allMbeanNames()
       infos <- ZIO.foreach(names)(n => svr.mbeanInfo(n))
     } yield (

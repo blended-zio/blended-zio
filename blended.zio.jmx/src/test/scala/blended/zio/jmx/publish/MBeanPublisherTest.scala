@@ -22,7 +22,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   private val logSlf4j = Slf4jLogger.make((_, message) => message)
 
   private val jmxLayer
-    : ZLayer[Any, Nothing, ProductMBeanPublisher.ProductMBeanPublisher with MBeanServerFacade.MBeanServerFacade] =
+    : ZLayer[Any, Nothing, ProductMBeanPublisher.ProductMBeanPublisher with Has[MBeanServerFacade.MBeanServerSvc]] =
     (logSlf4j >>> ProductMBeanPublisher.live) ++ (logSlf4j >>> MBeanServerFacade.live)
   // end:doctag<layer>
 
@@ -36,7 +36,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   // doctag<simple>
   private val simplePublish = testM("publish a simple case class")(for {
     pub  <- ZIO.service[ProductMBeanPublisher.Service]
-    fac  <- ZIO.service[MBeanServerFacade.Service]
+    fac  <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     cc   <- ZIO.succeed(Simple("test1", 0, "Hello Jmx"))
     info <- pub.updateMBean(cc) >>> fac.mbeanInfo(objectName(cc))
   } yield {
@@ -50,7 +50,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
 
   private val simpleUpdate = testM("publish updates for a simple case class")(for {
     pub  <- ZIO.service[ProductMBeanPublisher.Service]
-    fac  <- ZIO.service[MBeanServerFacade.Service]
+    fac  <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     cc   <- ZIO.succeed(Simple("test2", 0, "Hello Jmx"))
     _    <- pub.updateMBean(cc)
     _    <- pub.updateMBean(cc.copy(counter = 100, message = "Hello Update"))
@@ -74,7 +74,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
   private val remove = testM("allow to remove a registered MBean")(for {
     pub <- ZIO.service[ProductMBeanPublisher.Service]
     cc  <- ZIO.succeed(Simple("test4", 0, "Hello Jmx"))
-    fac <- ZIO.service[MBeanServerFacade.Service]
+    fac <- ZIO.service[MBeanServerFacade.MBeanServerSvc]
     _   <- pub.updateMBean(cc)
     _   <- pub.removeMBean(cc)
     r   <- fac.mbeanInfo(objectName(cc)).run

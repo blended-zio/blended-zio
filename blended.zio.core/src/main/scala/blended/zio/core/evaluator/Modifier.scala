@@ -85,8 +85,8 @@ object ReplaceModifier extends Modifier {
 // doctag<decrypt>
 object EncryptedModifier {
 
-  def create: ZIO[CryptoSupport.CryptoSupport, Nothing, Modifier] = for {
-    cs <- ZIO.service[CryptoSupport.Service]
+  def create = for {
+    cs <- ZIO.service[CryptoSupport.CryptoSvc]
     mod = new Modifier {
             override def name: String = "encrypted"
 

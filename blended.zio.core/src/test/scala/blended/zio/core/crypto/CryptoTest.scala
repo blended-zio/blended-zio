@@ -8,13 +8,12 @@ import zio.test._
 
 object CryptoTest extends DefaultRunnableSpec {
 
-  private val cryptoDefault: ZLayer[Any, Nothing, CryptoSupport.CryptoSupport] =
-    CryptoSupport.default.orDie
+  private val cryptoDefault = CryptoSupport.default.orDie
 
-  private val cryptoPwd: ZLayer[Any, Nothing, CryptoSupport.CryptoSupport] =
+  private val cryptoPwd =
     CryptoSupport.fromPassword("MyCoolPassword").orDie
 
-  private val cryptoNoFile: ZLayer[Any, Nothing, CryptoSupport.CryptoSupport] =
+  private val cryptoNoFile =
     CryptoSupport.fromFile("/tmp/completelyRandom").orDie
 
   override def spec: ZSpec[_root_.zio.test.environment.TestEnvironment, Any] = suite("The Crypto support should")(
@@ -28,7 +27,7 @@ object CryptoTest extends DefaultRunnableSpec {
       s <- Gen.stringBounded(10, 100)(Gen.alphaNumericChar)
     } yield s) { value =>
       for {
-        cs  <- ZIO.service[CryptoSupport.Service]
+        cs  <- ZIO.service[CryptoSupport.CryptoSvc]
         enc <- cs.encrypt(value)
         dec <- cs.decrypt(enc)
       } yield (

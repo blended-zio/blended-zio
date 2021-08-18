@@ -8,9 +8,7 @@ import org.apache.activemq.broker.BrokerService
 
 object AMQBroker {
 
-  type AMQBrokerService = Has[BrokerService]
-
-  def simple(brokerName: String): ZLayer[Logging with Blocking, Throwable, AMQBrokerService] =
+  def simple(brokerName: String): ZLayer[Logging with Blocking, Throwable, Has[BrokerService]] =
     ZLayer.fromManaged(managedBroker(brokerName))
 
   private def managedBroker(brokerName: String): ZManaged[Logging with Blocking, Throwable, BrokerService] =

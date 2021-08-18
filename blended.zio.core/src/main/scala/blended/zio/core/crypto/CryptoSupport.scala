@@ -30,31 +30,29 @@ object CryptoSupport {
   private val defaultPwd: String = "vczP26-QZ5n%$8YP"
   private val salt: Array[Char]  = ("V*YE6FPXW6#!g^hD" + "*" * keyBytes).substring(0, keyBytes).toCharArray()
 
-  type CryptoSupport = Has[Service]
-
   // doctag<service>
-  trait Service {
+  trait CryptoSvc {
     def encrypt(plain: String): ZIO[Any, CryptoException, String]
     def decrypt(encrypted: String): ZIO[Any, CryptoException, String]
   }
   // end:doctag<service>
 
-  val default: ZLayer[Any, CryptoException, CryptoSupport] = fromPassword(defaultPwd)
+  val default: ZLayer[Any, CryptoException, Has[CryptoSvc]] = fromPassword(defaultPwd)
 
-  def fromPassword(password: String): ZLayer[Any, CryptoException, CryptoSupport] = ZLayer.fromEffect(
+  def fromPassword(password: String): ZLayer[Any, CryptoException, Has[CryptoSvc]] = ZLayer.fromEffect(
     createWithPassword(password)
   )
 
-  def fromFile(filename: String): ZLayer[Any, CryptoException, CryptoSupport] = ZLayer.fromEffect(
+  def fromFile(filename: String): ZLayer[Any, CryptoException, Has[CryptoSvc]] = ZLayer.fromEffect(
     password(filename).flatMap(createWithPassword)
   )
 
-  private def createWithPassword(pwd: String): ZIO[Any, CryptoException, Service] =
+  private def createWithPassword(pwd: String): ZIO[Any, CryptoException, CryptoSvc] =
     saltedPassword(pwd).flatMap(key).flatMap(createService)
 
-  private def createService(k: Key): ZIO[Any, Nothing, Service] =
+  private def createService(k: Key): ZIO[Any, Nothing, CryptoSvc] =
     ZIO.succeed(new DefaultCryptoSupport(k, alg)).map { cs =>
-      new Service {
+      new CryptoSvc {
         override def encrypt(plain: String): ZIO[Any, CryptoException, String]     =
           cs.encrypt(plain)
         override def decrypt(encrypted: String): ZIO[Any, CryptoException, String] =

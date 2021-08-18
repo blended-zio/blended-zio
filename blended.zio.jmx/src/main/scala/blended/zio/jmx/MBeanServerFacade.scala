@@ -11,10 +11,8 @@ import zio.logging._
 
 object MBeanServerFacade {
 
-  type MBeanServerFacade = Has[Service]
-
   // doctag<service>
-  trait Service {
+  trait MBeanServerSvc {
 
     /**
      * Retrieve the information for a MBean by it's object name. Any JMX related information will be
@@ -44,46 +42,45 @@ object MBeanServerFacade {
   // end:doctag<service>
 
   // doctag<zlayer>
-  val live: ZLayer[Logging, Nothing, MBeanServerFacade] = ZLayer.fromFunction(log =>
-    new Service {
-      private val impl: JvmMBeanServerFacade = new JvmMBeanServerFacade(ManagementFactory.getPlatformMBeanServer)
+  val live =
+    (ZIO
+      .service[Logger[String]]
+      .map { logger =>
+        new MBeanServerSvc {
+          private val impl: JvmMBeanServerFacade =
+            new JvmMBeanServerFacade(ManagementFactory.getPlatformMBeanServer, logger)
 
-      override def mbeanInfo(objName: JmxObjectName): ZIO[Any, Throwable, JmxBeanInfo] =
-        impl.mbeanInfo(objName).provide(log)
+          override def mbeanInfo(objName: JmxObjectName): ZIO[Any, Throwable, JmxBeanInfo] =
+            impl.mbeanInfo(objName)
 
-      override def mbeanNames(objName: Option[JmxObjectName]): ZIO[Any, Throwable, List[JmxObjectName]] =
-        impl.mbeanNames(objName).provide(log)
-    }
-  )
+          override def mbeanNames(objName: Option[JmxObjectName]): ZIO[Any, Throwable, List[JmxObjectName]] =
+            impl.mbeanNames(objName)
+        }
+      })
+      .toLayer
   // end:doctag<zlayer>
 }
 
-final class JvmMBeanServerFacade(svr: MBeanServer) {
+final class JvmMBeanServerFacade(svr: MBeanServer, logger: Logger[String]) {
 
   // doctag<names>
-  def mbeanNames(objName: Option[JmxObjectName]): ZIO[Logging, Throwable, List[JmxObjectName]] = for {
+  def mbeanNames(objName: Option[JmxObjectName]) = for {
     pattern <- optionalPattern(objName)
-    _       <- doLog(LogLevel.Info)(s"Querying object names with [$pattern]")
+    _       <- logger.info(s"Querying object names with [$pattern]")
     names   <- queryNames(pattern)
     res      = names.map(JmxObjectName.fromObjectName)
   } yield res
   // end:doctag<names>
 
   // doctag<info>
-  def mbeanInfo(objName: JmxObjectName): ZIO[Logging, Throwable, JmxBeanInfo] = for {
+  def mbeanInfo(objName: JmxObjectName) = for {
     on           <- ZIO.effect(new ObjectName(objName.objectName))
-    _            <- doLog(LogLevel.Info)(s"Getting MBeanInfo [$objName]")
+    _            <- logger.info(s"Getting MBeanInfo [$objName]")
     info          = svr.getMBeanInfo(on)
     readableAttrs = info.getAttributes.filter(_.isReadable())
     mapped       <- mapAllAttributes(on, readableAttrs)
     result        = JmxBeanInfo(objName, mapped)
   } yield result
-
-  private def doLog(level: LogLevel)(msg: => String): ZIO[Logging, Nothing, Unit] = for {
-    _ <- log.locally(LogAnnotation.Name(getClass.getName :: Nil)) {
-           log(level)(msg)
-         }
-  } yield ()
   // end:doctag<info>
 
   // Helper method to map a list of JMX Attributes into their JmxAttributes

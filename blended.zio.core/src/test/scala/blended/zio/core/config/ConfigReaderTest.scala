@@ -28,7 +28,7 @@ object ConfigReaderTest extends DefaultRunnableSpec {
   // doctag<layer>
   private val logSlf4j = Slf4jLogger.make((_, message) => message)
 
-  private val cryptoDefault: ZLayer[Any, Nothing, CryptoSupport.CryptoSupport] =
+  private val cryptoDefault =
     CryptoSupport.default.orDie
 
   private val mods: ZIO[Any, Nothing, Seq[Modifier]] = EncryptedModifier.create.provideLayer(cryptoDefault).map { em =>
