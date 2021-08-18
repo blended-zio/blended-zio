@@ -5,6 +5,7 @@ import javax.jms._
 import scala.jdk.CollectionConverters._
 
 import zio._
+import zio.logging._
 import zio.blocking._
 
 import blended.zio.streams._
@@ -59,7 +60,9 @@ object JmsEndpoint {
     session: JmsSession,
     consumer: Option[JmsConsumer],
     producer: JmsProducer
-  )
+  ) {
+    override def toString(): String = s"JmsEndpointState($session, $consumer, $producer)"
+  }
 
   sealed private class JmsConnector(
     ep: JmsEndpoint,
@@ -74,7 +77,9 @@ object JmsEndpoint {
             sess <- JmsApi.createSession_(con)
             cons <- if (ep.receive) JmsApi.createConsumer_(sess, ep.dest).map(Some(_)) else ZIO.none
             prod <- JmsApi.createProducer_(sess)
-          } yield Some(JmsEndpointState(sess, cons, prod))
+            state = JmsEndpointState(sess, cons, prod)
+            _    <- log.info(s"Created JMS endpoint state [$state]")
+          } yield Some(state)
         case v @ Some(_) => ZIO.succeed(v)
       }
     }
@@ -82,13 +87,16 @@ object JmsEndpoint {
     def stop = state.update {
       _ match {
         case Some(v) =>
-          (v.consumer match {
-            case None    => ZIO.none
-            case Some(c) => JmsApi.closeConsumer_(c)
-          }) *> JmsApi.closeProducer_(v.producer) *> JmsApi.closeSession_(
-            v.session
-          ) *> ZIO.none
-        case None    => ZIO.succeed(None)
+          for {
+            _ <- log.info(s"Closing JMS endpoint state [$v]")
+            _ <- v.consumer match {
+                   case None    => ZIO.unit
+                   case Some(c) => JmsApi.closeConsumer_(c)
+                 }
+            _ <- JmsApi.closeProducer_(v.producer)
+            _ <- JmsApi.closeSession_(v.session)
+          } yield None
+        case None    => ZIO.none
       }
     }
 

@@ -32,6 +32,6 @@ object AMQBroker {
 
   private def stopBroker(bs: BrokerService): ZIO[Logging with Blocking, Nothing, Unit] = for {
     _ <- log.info(s"Stopping simple ActiveMQ Broker [${bs.getBrokerName()}]")
-    _ <- effectBlockingInterrupt(bs.stop()).orDie
+    _ <- effectBlockingInterrupt(bs.stop()).ignore
   } yield ()
 }

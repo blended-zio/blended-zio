@@ -9,7 +9,7 @@ import zio.logging._
 import zio.stream._
 
 import blended.zio.core.RuntimeId
-import blended.zio.core.RuntimeId.RuntimeIdService
+import blended.zio.core.RuntimeId.RuntimeIdSvc
 import blended.zio.streams.FlowEnvelope
 import blended.zio.streams.jms.JmsApiObject._
 import blended.zio.streams.jms.JmsConnectionManager._
@@ -17,12 +17,12 @@ import blended.zio.streams.jms.JmsDestination._
 
 object JmsApi {
 
-  type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with RuntimeIdService
+  type JmsEnv        = ZEnv with Logging with JmsConnectionManagerService with Has[RuntimeIdSvc]
   type JmsEncoder[T] = JmsProducer => FlowEnvelope[_, T] => ZIO[Blocking, JMSException, Message]
 
   def defaultJmsEnv[R, E](
     logging: ZLayer[R, E, Logging]
-  ): ZLayer[R, E, Logging with JmsConnectionManagerService with RuntimeIdService] =
+  ): ZLayer[R, E, Logging with JmsConnectionManagerService with Has[RuntimeIdSvc]] =
     logging ++ JmsConnectionManager.default ++ RuntimeId.default
 
   val stringEnvelopeEncoder: JmsEncoder[String] = p =>
@@ -49,7 +49,7 @@ object JmsApi {
 
   def createSession_(con: JmsConnection) =
     (for {
-      rid <- ZIO.service[RuntimeId.Service]
+      rid <- ZIO.service[RuntimeIdSvc]
       js  <- effectBlocking(
                con.conn.createSession(false, Session.AUTO_ACKNOWLEDGE)
              )
@@ -67,7 +67,7 @@ object JmsApi {
   def createSession(con: JmsConnection) = ZManaged.make(createSession_(con))(s => closeSession_(s))
 
   def createProducer_(js: JmsSession) = for {
-    rid <- ZIO.service[RuntimeId.Service]
+    rid <- ZIO.service[RuntimeIdSvc]
     id  <- rid.nextId(js.id)
     p   <- effectBlocking(
              js.session.createProducer(null)
@@ -85,7 +85,7 @@ object JmsApi {
 
   def createConsumer_(js: JmsSession, dest: JmsDestination) =
     for {
-      rid <- ZIO.service[RuntimeId.Service]
+      rid <- ZIO.service[RuntimeIdSvc]
       id  <- rid.nextId(js.id)
       d   <- dest.create(js)
       c   <- effectBlocking {
@@ -100,7 +100,7 @@ object JmsApi {
 
   def closeConsumer_(c: JmsConsumer) =
     for {
-      _ <- log.debug(s"Closing Consumer [$c]")
+      _ <- log.debug(s"Closing JMS Consumer [$c]")
       _ <- effectBlocking(c.consumer.close()).catchAll(t => logException(s"Error closing JMS consumer [${c.id}]", t))
     } yield ()
 

@@ -122,9 +122,13 @@ object Endpoint {
     final def disconnect: ZIO[Clock with Logging, Throwable, Unit] = state.updateSome {
       case EndpointState(EndpointStateDetail.Started, inflight) =>
         for {
-          _ <- ZIO.foreach(inflight)(_.deny)
+          _ <- log.info(s"Stopping endpoint [$id] with [${inflight.size}] inflight messages.")
+//          _ <- ZIO.foreach(inflight)(_.deny)
+          _ <- log.debug(s"Finished denying inflight messages in [$id]")
           _ <- stop.get.flatMap(ZIO.foreach(_)(_.complete(ZIO.succeed(true))))
+          _ <- log.debug(s"Flagged connector stop for endpoint [$id]")
           _ <- stop.set(None) *> streamRef.set(None) *> sinkRef.set(None)
+          _ <- log.debug(s"About to invoke connector stop for endpoint [$id]")
           _ <- connector.stop.provide(environment)
         } yield EndpointState(EndpointStateDetail.Created, Chunk.empty)
     }
