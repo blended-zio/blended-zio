@@ -9,11 +9,17 @@ object RuntimeId {
     def nextId(category: String): ZIO[Any, Nothing, String]
   }
 
-  def default: ZLayer[Any, Nothing, Has[RuntimeIdSvc]] = ZLayer.fromEffect(makeService)
-
-  private val makeService = for {
-    idMap <- TMap.make[String, Long]().commit
-  } yield new DefaultRuntimeIdService(idMap)
+  val default: ZLayer[Any, Nothing, Has[RuntimeIdSvc]] =
+    (TMap
+      .make[String, Long]()
+      .commit
+      .map(ids => new DefaultRuntimeIdService(ids))
+      .map { impl =>
+        new RuntimeIdSvc {
+          override def nextId(category: String): ZIO[Any, Nothing, String] = impl.nextId(category)
+        }
+      })
+      .toLayer
 
   private class DefaultRuntimeIdService(ids: TMap[String, Long]) extends RuntimeIdSvc {
 

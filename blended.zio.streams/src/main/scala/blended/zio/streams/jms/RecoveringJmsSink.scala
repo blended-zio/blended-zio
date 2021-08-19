@@ -43,7 +43,7 @@ sealed abstract class RecoveringJmsSink[T] private (
     def produceForever: ZIO[JmsEnv, Nothing, Unit] = {
       val part = for {
         _      <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
-        conMgr <- ZIO.service[JmsConnectionManager.Service]
+        conMgr <- ZIO.service[JmsConnectionManager.JmsConnectionMangerSvc]
         con    <- conMgr.connect(factory, clientId)
         _      <- createSession(con).use { jmsSess =>
                     createProducer(jmsSess).use { p =>
