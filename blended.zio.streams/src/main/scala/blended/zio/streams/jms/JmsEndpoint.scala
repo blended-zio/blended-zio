@@ -5,8 +5,7 @@ import javax.jms._
 import scala.jdk.CollectionConverters._
 
 import zio._
-import zio.logging._
-import zio.blocking._
+import zio.logging.{ Logging, Logger }
 
 import blended.zio.streams._
 import blended.zio.streams.jms.JmsApi._
@@ -31,28 +30,32 @@ object JmsEndpoint {
     dest: JmsDestination,
     receive: Boolean = true,
     selector: Option[JmsMessageSelector] = None
-  ): ZManaged[JmsApi.JmsEnv, Throwable, Endpoint[String, JmsMessageBody]] = (for {
-    ep  <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, receive, selector))
-    con <- connector(ep)
-    ep  <- Endpoint.make(ep.id, con, Endpoint.defaultEndpointConfig)
-    _   <- ep.connect
+  ): ZManaged[Logging, Throwable, Endpoint[String, JmsMessageBody]] = (for {
+    logger <- ZIO.service[Logger[String]]
+    ep     <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, receive, selector))
+    con    <- connector(ep, logger)
+    ep     <- Endpoint.make(ep.id, con, Endpoint.defaultEndpointConfig)
+    _      <- ep.connect
   } yield ep).toManaged(ep => ep.disconnect.catchAll(_ => ZIO.unit))
 
-  private def connector(ep: JmsEndpoint): ZIO[JmsApi.JmsEnv, Throwable, Connector[JmsEnv, String, JmsMessageBody]] =
+  private def connector(
+    ep: JmsEndpoint,
+    logger: Logger[String]
+  ): ZIO[Any, Throwable, Connector[String, JmsMessageBody]] =
     for {
       state <- RefM.make[Option[JmsEndpointState]](None)
-      con    = new JmsConnector(ep, state)
-    } yield new Connector[JmsEnv, String, JmsMessageBody] {
-      override def start: ZIO[JmsEnv, Throwable, Unit] = con.start
+      con    = new JmsConnector(ep, logger, state)
+    } yield new Connector[String, JmsMessageBody] {
+      override def start: ZIO[Any, Throwable, Unit] = con.start
 
-      override def stop: ZIO[JmsEnv, Throwable, Unit] = con.stop
+      override def stop: ZIO[Any, Throwable, Unit] = con.stop
 
-      override def nextEnvelope: ZIO[JmsEnv, Throwable, Option[FlowEnvelope[String, JmsMessageBody]]] =
+      override def nextEnvelope: ZIO[Any, Throwable, Option[FlowEnvelope[String, JmsMessageBody]]] =
         con.nextEnvelope_?
 
       override def sendEnvelope(
         env: FlowEnvelope[String, JmsMessageBody]
-      ): ZIO[JmsEnv, Throwable, FlowEnvelope[String, JmsMessageBody]] =
+      ): ZIO[Any, Throwable, FlowEnvelope[String, JmsMessageBody]] =
         con.sendEnvelope(env)
     }
 
@@ -66,6 +69,7 @@ object JmsEndpoint {
 
   sealed private class JmsConnector(
     ep: JmsEndpoint,
+    logger: Logger[String],
     state: RefM[Option[JmsEndpointState]]
   ) {
 
@@ -78,7 +82,7 @@ object JmsEndpoint {
             cons <- if (ep.receive) JmsApi.createConsumer_(sess, ep.dest).map(Some(_)) else ZIO.none
             prod <- JmsApi.createProducer_(sess)
             state = JmsEndpointState(sess, cons, prod)
-            _    <- log.info(s"Created JMS endpoint state [$state]")
+            _    <- logger.info(s"Created JMS endpoint state [$state]")
           } yield Some(state)
         case v @ Some(_) => ZIO.succeed(v)
       }
@@ -88,7 +92,7 @@ object JmsEndpoint {
       _ match {
         case Some(v) =>
           for {
-            _ <- log.info(s"Closing JMS endpoint state [$v]")
+            _ <- logger.info(s"Closing JMS endpoint state [$v]")
             _ <- v.consumer match {
                    case None    => ZIO.unit
                    case Some(c) => JmsApi.closeConsumer_(c)

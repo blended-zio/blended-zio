@@ -6,53 +6,95 @@ import zio.duration._
 import zio.logging._
 import zio.stream._
 
-// A connector that requires an environment R and works on top of FlowEnvelope[I,T]
-trait Connector[R, I, T] {
+// A connector that works on top of FlowEnvelope[I,T]
+trait Connector[I, T] {
 
   // Effectfully connect the endpoint to the underlying technology
-  def start: ZIO[R, Throwable, Unit]
+  def start: ZIO[Any, Throwable, Unit]
 
   // Effectfully disconnect from the underlying technology
-  def stop: ZIO[R, Throwable, Unit]
+  def stop: ZIO[Any, Throwable, Unit]
 
   // Get the next message from the underlying technology
-  def nextEnvelope: ZIO[R, Throwable, Option[FlowEnvelope[I, T]]]
+  def nextEnvelope: ZIO[Any, Throwable, Option[FlowEnvelope[I, T]]]
 
   // Send a given envelope to the underlying technology
-  def sendEnvelope(f: FlowEnvelope[I, T]): ZIO[R, Throwable, FlowEnvelope[I, T]]
+  def sendEnvelope(f: FlowEnvelope[I, T]): ZIO[Any, Throwable, FlowEnvelope[I, T]]
 }
 
 // An endpoint that operates on FlowEnvelope[I,T]
 trait Endpoint[I, T] {
-
-  type R
 
   val id: String
 
   val config: Endpoint.EndpointConfig
 
   // We delegate to connector start if and only if the endpoint is in Created state
-  def connect: ZIO[Clock with Logging, Throwable, Unit]
+  def connect: ZIO[Any, Throwable, Unit]
 
   // To disconnect we need to deny all current inflight envelopes and then go back to Created state
-  def disconnect: ZIO[Clock with Logging, Throwable, Unit]
+  def disconnect: ZIO[Any, Throwable, Unit]
 
   // We can only send messages in Started state
   // If called in any other state we will try to initiate a recovery for the endpoint
-  def send(env: FlowEnvelope[I, T]): ZIO[Clock with Logging, Throwable, FlowEnvelope[I, T]]
+  def send(env: FlowEnvelope[I, T]): ZIO[Any, Throwable, FlowEnvelope[I, T]]
 
-  def nextEnvelope: ZIO[Clock with Logging, Throwable, Option[FlowEnvelope[I, T]]]
+  def nextEnvelope: ZIO[Any, Throwable, Option[FlowEnvelope[I, T]]]
 
-  def stream: ZIO[Clock with Logging, IllegalStateException, ZStream[Clock with Logging, Nothing, FlowEnvelope[I, T]]]
+  def stream: ZIO[Any, IllegalStateException, ZStream[Any, Nothing, FlowEnvelope[I, T]]]
 
   def sink
-    : ZIO[Clock with Logging, IllegalStateException, ZSink[Clock with Logging, IllegalStateException, FlowEnvelope[
-      I,
-      T
-    ], FlowEnvelope[I, T], Unit]]
+    : ZIO[Any, IllegalStateException, ZSink[Any, IllegalStateException, FlowEnvelope[I, T], FlowEnvelope[I, T], Unit]]
 }
 
 object Endpoint {
+
+  def managed[I1, T1](
+    eid: String,
+    con: Connector[I1, T1],
+    cfg: EndpointConfig
+  ) =
+    ZManaged.make(make(eid, con, cfg))(
+      _.disconnect.catchAll(t => log.warn(s"Error disconnecting Endpoint [$eid] : ${t.getMessage()}"))
+    )
+
+  def make[I1, T1](
+    eid: String,
+    con: Connector[I1, T1],
+    cfg: EndpointConfig
+  ): ZIO[Logging, Nothing, Endpoint[I1, T1]] = for {
+    epLogger <- ZIO.service[Logger[String]]
+    epState  <- RefM.make(EndpointState[I1, T1](EndpointStateDetail.Created, Chunk.empty))
+    strRef   <- Ref.make[Option[ZStream[Any, Nothing, FlowEnvelope[I1, T1]]]](None)
+    skRef    <-
+      Ref.make[Option[ZSink[Any, Nothing, FlowEnvelope[I1, T1], FlowEnvelope[I1, T1], Unit]]](None)
+    prom     <- RefM.make[Option[Promise[Nothing, Boolean]]](None)
+    ep        = new EndpointImpl[I1, T1] {
+                  override val id                          = eid
+                  override val logger                      = epLogger
+                  override val config                      = cfg
+                  override val connector                   = con
+                  override val state                       = epState
+                  override private[Endpoint] val streamRef = strRef
+                  override private[Endpoint] val sinkRef   = skRef
+                  override private[Endpoint] val stop      = prom
+                }
+  } yield new Endpoint[I1, T1] {
+    override val id                                                                                   = ep.id
+    override val config: EndpointConfig                                                               = cfg
+    override def connect: ZIO[Any, Throwable, Unit]                                                   = ep.connect
+    override def disconnect: ZIO[Any, Throwable, Unit]                                                = ep.disconnect
+    override def nextEnvelope: ZIO[Any, Throwable, Option[FlowEnvelope[I1, T1]]]                      = ep.nextEnvelope
+    override def send(env: FlowEnvelope[I1, T1]): ZIO[Any, Throwable, FlowEnvelope[I1, T1]]           =
+      ep.send(env)
+    override def stream: ZIO[Any, IllegalStateException, ZStream[Any, Nothing, FlowEnvelope[I1, T1]]] =
+      ep.stream
+    override def sink: ZIO[
+      Any,
+      IllegalStateException,
+      ZSink[Any, Nothing, FlowEnvelope[I1, T1], FlowEnvelope[I1, T1], Unit]
+    ]                                                                                                 = ep.sink
+  }
 
   final case class EndpointConfig private (
     // The number of parallel inflight envelopes the endpoint can handle
@@ -96,40 +138,39 @@ object Endpoint {
 
   private trait EndpointImpl[I, T] {
 
-    type R
-
     val id: String
-    val environment: R with Clock with Logging
     val config: EndpointConfig
-    val connector: Connector[R, I, T]
+    val connector: Connector[I, T]
     val state: RefM[EndpointState[I, T]]
+    val logger: Logger[String]
 
-    private[Endpoint] val streamRef: Ref[Option[ZStream[Clock with Logging, Nothing, FlowEnvelope[I, T]]]]
+    private[Endpoint] val streamRef: Ref[Option[ZStream[Any, Nothing, FlowEnvelope[I, T]]]]
     private[Endpoint] val sinkRef: Ref[
-      Option[ZSink[Clock with Logging, Nothing, FlowEnvelope[I, T], FlowEnvelope[I, T], Unit]]
+      Option[ZSink[Any, Nothing, FlowEnvelope[I, T], FlowEnvelope[I, T], Unit]]
     ]
     private[Endpoint] val stop: RefM[Option[Promise[Nothing, Boolean]]]
 
     override def toString(): String = s"${getClass().getSimpleName()}($id)"
 
     // We delegate to connector start if and only if the endpoint is in Created state
-    final def connect: ZIO[Clock with Logging, Throwable, Unit] = state.updateSome {
+    final def connect: ZIO[Any, Throwable, Unit] = state.updateSome {
       case EndpointState(EndpointStateDetail.Created, _) =>
-        connector.start.map(_ => EndpointState[I, T](EndpointStateDetail.Started, Chunk.empty)).provide(environment)
+        connector.start.map(_ => EndpointState[I, T](EndpointStateDetail.Started, Chunk.empty))
     }
 
     // To disconnect we need to deny all current inflight envelopes and then go back to Created state
-    final def disconnect: ZIO[Clock with Logging, Throwable, Unit] = state.updateSome {
+    final def disconnect: ZIO[Any, Throwable, Unit] = state.updateSome {
       case EndpointState(EndpointStateDetail.Started, inflight) =>
         for {
-          _ <- log.info(s"Stopping endpoint [$id] with [${inflight.size}] inflight messages.")
-//          _ <- ZIO.foreach(inflight)(_.deny)
-          _ <- log.debug(s"Finished denying inflight messages in [$id]")
+          _ <- logger.info(s"Stopping endpoint [$id] with [${inflight.size}] inflight messages.")
+          // TODO: Reactivate this
+          //_ <- ZIO.foreach(inflight)(_.deny)
+          _ <- logger.trace(s"Finished denying inflight messages in [$id]")
           _ <- stop.get.flatMap(ZIO.foreach(_)(_.complete(ZIO.succeed(true))))
-          _ <- log.debug(s"Flagged connector stop for endpoint [$id]")
+          _ <- logger.trace(s"Flagged connector stop for endpoint [$id]")
           _ <- stop.set(None) *> streamRef.set(None) *> sinkRef.set(None)
-          _ <- log.debug(s"About to invoke connector stop for endpoint [$id]")
-          _ <- connector.stop.provide(environment)
+          _ <- logger.trace(s"About to invoke connector stop for endpoint [$id]")
+          _ <- connector.stop
         } yield EndpointState(EndpointStateDetail.Created, Chunk.empty)
     }
 
@@ -137,16 +178,16 @@ object Endpoint {
     // If called in any other state we will try to initiate a recovery for the endpoint
     final def send(
       env: FlowEnvelope[I, T]
-    ): ZIO[Clock with Logging, Throwable, FlowEnvelope[I, T]] =
+    ): ZIO[Any, Throwable, FlowEnvelope[I, T]] =
       (for {
         cs  <- state.get
         env <- cs.state match {
                  case EndpointStateDetail.Started => connector.sendEnvelope(env)
                  case s                           => ZIO.fail(new IllegalStateException(s"Endpoint [$id] cannot send messages in state [$s]"))
                }
-      } yield env).tapError(recover(_)).provide(environment)
+      } yield env).tapError(recover(_))
 
-    final def nextEnvelope: ZIO[Clock with Logging, Throwable, Option[FlowEnvelope[I, T]]] =
+    final def nextEnvelope: ZIO[Any, Throwable, Option[FlowEnvelope[I, T]]] =
       (for {
         cs  <- state.get
         env <- cs.state match {
@@ -165,13 +206,17 @@ object Endpoint {
                    }
                  case _                           => ZIO.none
                }
-      } yield env).tapError(recover(_)).provide(environment)
+      } yield env).tapError(recover(_))
 
-    def stream
-      : ZIO[Clock with Logging, IllegalStateException, ZStream[Clock with Logging, Nothing, FlowEnvelope[I, T]]] = {
-      def consumeForEver(buffer: Queue[FlowEnvelope[I, T]]): ZIO[Clock with Logging, Nothing, Unit] = {
+    def stream: ZIO[Any, IllegalStateException, ZStream[Any, Nothing, FlowEnvelope[I, T]]] = {
+      def consumeForEver(buffer: Queue[FlowEnvelope[I, T]]): ZIO[Any, Nothing, Unit] = {
         val part = Stream.repeatEffect(nextEnvelope).collect { case Some(env) => env }.foreach(buffer.offer(_))
-        part.catchAll(_ => consumeForEver(buffer).schedule(Schedule.duration(config.recoveryInterval)).fork *> ZIO.unit)
+        part.catchAll(_ =>
+          consumeForEver(buffer)
+            .schedule(Schedule.duration(config.recoveryInterval))
+            .fork
+            .provideLayer(Clock.live) *> ZIO.unit
+        )
       }
 
       ZIO.ifM(streamRef.get.map(_.isDefined))(
@@ -185,7 +230,7 @@ object Endpoint {
       )
     }
 
-    def sink: ZIO[Clock with Logging, IllegalStateException, ZSink[Clock with Logging, Nothing, FlowEnvelope[
+    def sink: ZIO[Any, IllegalStateException, ZSink[Any, Nothing, FlowEnvelope[
       I,
       T
     ], FlowEnvelope[
@@ -193,9 +238,14 @@ object Endpoint {
       T
     ], Unit]] = {
 
-      def produceForEver(buffer: Queue[FlowEnvelope[I, T]]): ZIO[Clock with Logging, Nothing, Unit] = {
+      def produceForEver(buffer: Queue[FlowEnvelope[I, T]]): ZIO[Any, Nothing, Unit] = {
         val part = buffer.take.flatMap(send(_).flatMap(_.ackOrDeny)).forever
-        part.catchAll(_ => produceForEver(buffer).schedule(Schedule.duration(config.recoveryInterval)).fork *> ZIO.unit)
+        part.catchAll(_ =>
+          produceForEver(buffer)
+            .schedule(Schedule.duration(config.recoveryInterval))
+            .fork
+            .provideLayer(Clock.live) *> ZIO.unit
+        )
       }
 
       ZIO.ifM(sinkRef.get.map(_.isDefined))(
@@ -205,7 +255,7 @@ object Endpoint {
           q <- zio.Queue.bounded[FlowEnvelope[I, T]](1)
           s <- produceForEver(q).fork *> ZIO.succeed(
                  ZSink
-                   .foreach[Clock with Logging, Nothing, FlowEnvelope[I, T]](msg => q.offer(msg))
+                   .foreach[Any, Nothing, FlowEnvelope[I, T]](msg => q.offer(msg))
                    .untilOutputM(_ => p.isDone)
                    .map(_ => ())
                )
@@ -225,17 +275,20 @@ object Endpoint {
 
     // To recover, we first disconnect the endpoint and then schedule a state change to "created"
     // Then we can try to reconnect
-    private def recover(t: Throwable): ZIO[R with Clock with Logging, Throwable, Unit] =
-      log.info(s"Starting recovery for Endpoint [$id] : [${t.getMessage()}]") *>
+    private def recover(t: Throwable): ZIO[Any, Throwable, Unit] =
+      logger.info(s"Starting recovery for Endpoint [$id] : [${t.getMessage()}]") *>
         state.updateSome {
           case EndpointState(EndpointStateDetail.Started, _) =>
             ZIO.succeed(EndpointState[I, T](EndpointStateDetail.Recovering, Chunk.empty)) <*
-              disconnect <* (reset *> connect).schedule(Schedule.duration(config.recoveryInterval)).forkDaemon
+              disconnect <* ((reset *> connect)
+                .schedule(Schedule.duration(config.recoveryInterval))
+                .forkDaemon)
+                .provideLayer(Clock.live)
           case EndpointState(EndpointStateDetail.Created, _) =>
             ZIO.succeed(EndpointState[I, T](EndpointStateDetail.Recovering, Chunk.empty))
         }
 
-    private def reset: ZIO[Clock with Logging, Nothing, Unit] =
+    private def reset: ZIO[Any, Nothing, Unit] =
       state.updateSome { case EndpointState(EndpointStateDetail.Recovering, _) =>
         ZIO.succeed(EndpointState[I, T](EndpointStateDetail.Created, Chunk.empty))
       }
@@ -246,55 +299,5 @@ object Endpoint {
       override def ack  = removeFromInflight
       override def deny = removeFromInflight
     }
-  }
-
-  def managed[R1, I1, T1](
-    eid: String,
-    con: Connector[R1, I1, T1],
-    cfg: EndpointConfig
-  ) = ZManaged.make(make(eid, con, cfg))(
-    _.disconnect.catchAll(t => log.warn(s"Error disconnecting Endpoint [$eid] : ${t.getMessage()}"))
-  )
-
-  def make[R1, I1, T1](
-    eid: String,
-    con: Connector[R1, I1, T1],
-    cfg: EndpointConfig
-  ): ZIO[R1 with Clock with Logging, Nothing, Endpoint[I1, T1]] = for {
-    env     <- ZIO.environment[R1 with Clock with Logging]
-    epState <- RefM.make(EndpointState[I1, T1](EndpointStateDetail.Created, Chunk.empty))
-    strRef  <- Ref.make[Option[ZStream[Clock with Logging, Nothing, FlowEnvelope[I1, T1]]]](None)
-    skRef   <-
-      Ref.make[Option[ZSink[Clock with Logging, Nothing, FlowEnvelope[I1, T1], FlowEnvelope[I1, T1], Unit]]](None)
-    prom    <- RefM.make[Option[Promise[Nothing, Boolean]]](None)
-    ep       = new EndpointImpl[I1, T1] {
-                 type R = R1
-                 override val id                          = eid
-                 override val environment                 = env
-                 override val config                      = cfg
-                 override val connector                   = con
-                 override val state                       = epState
-                 override private[Endpoint] val streamRef = strRef
-                 override private[Endpoint] val sinkRef   = skRef
-                 override private[Endpoint] val stop      = prom
-               }
-  } yield new Endpoint[I1, T1] {
-    type R = ep.R
-    override val id                     = ep.id
-    override val config: EndpointConfig = cfg
-
-    override def connect: ZIO[Clock with Logging, Throwable, Unit]                                                 = ep.connect
-    override def disconnect: ZIO[Clock with Logging, Throwable, Unit]                                              = ep.disconnect
-    override def nextEnvelope: ZIO[Clock with Logging, Throwable, Option[FlowEnvelope[I1, T1]]]                    = ep.nextEnvelope
-    override def send(env: FlowEnvelope[I1, T1]): ZIO[Clock with Logging, Throwable, FlowEnvelope[I1, T1]]         =
-      ep.send(env)
-    override def stream
-      : ZIO[Clock with Logging, IllegalStateException, ZStream[Clock with Logging, Nothing, FlowEnvelope[I1, T1]]] =
-      ep.stream
-    override def sink: ZIO[
-      Clock with Logging,
-      IllegalStateException,
-      ZSink[Clock with Logging, Nothing, FlowEnvelope[I1, T1], FlowEnvelope[I1, T1], Unit]
-    ]                                                                                                              = ep.sink
   }
 }

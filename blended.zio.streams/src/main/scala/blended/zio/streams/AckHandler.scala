@@ -1,11 +1,10 @@
 package blended.zio.streams
 
 import zio._
-import zio.logging._
 
 trait AckHandler {
-  def ack: ZIO[Logging, Throwable, Unit]
-  def deny: ZIO[Logging, Nothing, Unit]
+  def ack: ZIO[Any, Throwable, Unit]
+  def deny: ZIO[Any, Nothing, Unit]
 }
 
 object AckHandler {

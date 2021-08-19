@@ -11,14 +11,15 @@ sealed trait JmsMessageSelector {
 object JmsMessageSelector {
 
   sealed trait Operator {
-    def op: String
+    val op: String
   }
+
   final case object Equal          extends Operator { override val op = "="          }
-  final case object Unequal        extends Operator { override def op: String = "<>" }
-  final case object LessThan       extends Operator { override def op: String = "<"  }
-  final case object LessOrEqual    extends Operator { override def op: String = "<=" }
-  final case object GreaterThan    extends Operator { override def op: String = ">"  }
-  final case object GreaterOrEqual extends Operator { override def op: String = ">=" }
+  final case object Unequal        extends Operator { override val op: String = "<>" }
+  final case object LessThan       extends Operator { override val op: String = "<"  }
+  final case object LessOrEqual    extends Operator { override val op: String = "<=" }
+  final case object GreaterThan    extends Operator { override val op: String = ">"  }
+  final case object GreaterOrEqual extends Operator { override val op: String = ">=" }
 
   final case class SimpleSelector(field: String, op: Operator, param: MsgProperty[_]) extends JmsMessageSelector {
     override val selector: String = s"$field ${op.op} ${paramAsString(param)}"
