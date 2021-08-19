@@ -3,7 +3,7 @@ package blended.zio.streams
 import zio._
 import zio.clock._
 import zio.duration._
-import zio.logging._
+import zio.logging.Logger
 
 class KeepAliveException(val id: String, val count: Int)
   extends Exception(
@@ -45,7 +45,7 @@ trait KeepAliveMonitor {
    * Signal that the monitored entity is still alive. This will cause to reset the missed
    * counter to 0.
    */
-  def alive: ZIO[Logging, Nothing, Unit]
+  def alive: ZIO[Any, Nothing, Unit]
 
   /**
    * Start the monitor with a given interval. At every interval tick the counter
@@ -53,7 +53,7 @@ trait KeepAliveMonitor {
    * missed keep alives, run will terminate and yield the current counter (which happens to
    * be the allowed maximum).
    */
-  def run(interval: Duration): ZIO[Clock with Logging, Nothing, Int]
+  def run(interval: Duration): ZIO[Any, Nothing, Int]
 
   /**
    * Return the current count of missed keep alives
@@ -66,31 +66,33 @@ object DefaultKeepAliveMonitor {
 
   def make(
     name: String,
-    allowedKeepAlives: Int
+    allowedKeepAlives: Int,
+    logger: Logger[String]
   ) = for {
     init <- Ref.make[Int](0)
-    impl  = new DefaultKeepAliveMonitor(name, allowedKeepAlives) {
+    impl  = new DefaultKeepAliveMonitor(name, allowedKeepAlives, logger) {
               override private[streams] val missed: Ref[Int] = init
             }
     kam   = new KeepAliveMonitor {
-              override val id: String                                                     = name
-              override val allowed: Int                                                   = allowedKeepAlives
-              override def alive: ZIO[Logging, Nothing, Unit]                             = impl.alive
-              override def run(interval: Duration): ZIO[Clock with Logging, Nothing, Int] = impl.run(interval)
-              override def current: ZIO[Any, Nothing, Int]                                = impl.current
+              override val id: String                                      = name
+              override val allowed: Int                                    = allowedKeepAlives
+              override def alive: ZIO[Any, Nothing, Unit]                  = impl.alive
+              override def run(interval: Duration): ZIO[Any, Nothing, Int] = impl.run(interval)
+              override def current: ZIO[Any, Nothing, Int]                 = impl.current
             }
   } yield kam
 }
 
 sealed abstract private class DefaultKeepAliveMonitor private (
   name: String,
-  allowedKeepAlives: Int
+  allowedKeepAlives: Int,
+  logger: Logger[String]
 ) {
 
   private[streams] val missed: Ref[Int]
 
   private def alive = for {
-    _ <- log.trace(s"Reset keep alive monitor [$name]")
+    _ <- logger.trace(s"Reset keep alive monitor [$name]")
     _ <- missed.set(0)
   } yield ()
 
@@ -99,17 +101,17 @@ sealed abstract private class DefaultKeepAliveMonitor private (
   // doctag<run>
   private[streams] def run(interval: Duration) = {
 
-    def go: ZIO[Clock, Nothing, Unit] = ZIO.ifM(missed.updateAndGet(_ + 1).map(_ == allowedKeepAlives))(
+    def go: ZIO[Any, Nothing, Unit] = ZIO.ifM(missed.updateAndGet(_ + 1).map(_ == allowedKeepAlives))(
       ZIO.unit,
-      go.schedule(Schedule.duration(interval)).flatMap(_ => ZIO.unit)
+      (go.schedule(Schedule.duration(interval)).flatMap(_ => ZIO.unit)).provideLayer(Clock.live)
     )
 
-    for {
-      _ <- log.trace(s"Starting KeepAliveMonitor [$name]")
+    (for {
+      _ <- logger.trace(s"Starting KeepAliveMonitor [$name]")
       _ <- go.schedule(Schedule.duration(interval))
       c <- missed.get
-      _ <- log.trace(s"KeepAliveMonitor [$name] finished with maximum keep alives of [$c]")
-    } yield (c)
+      _ <- logger.trace(s"KeepAliveMonitor [$name] finished with maximum keep alives of [$c]")
+    } yield (c)).provideLayer(Clock.live)
   }
   // end:doctag<run>
 }

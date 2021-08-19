@@ -18,6 +18,7 @@ object JmsApi {
 
   trait JmsEncoder[T] {
     def encode(v: T, js: JmsSession): ZIO[Any, JMSException, Message]
+
   }
 
   object JmsEncoder {
@@ -69,6 +70,12 @@ object JmsApi {
       retryInterval: Duration,
       dest: JmsDestination
     ): ZStream[Any, Nothing, Message]
+
+    def recoveringJmsSink[T: JmsEncoder](
+      con: JmsConnection,
+      dest: JmsDestination,
+      retryInterval: Duration
+    ): ZSink[Any, Nothing, Message, Message, Unit]
   }
 
   def createSession_(con: JmsConnection) = ZIO.serviceWith[JmsApiSvc](_.createSession_(con))
@@ -216,16 +223,43 @@ object JmsApi {
         .flatten
     }
 
-    def recoveringJmsSink[T](
-      cf: JmsConnectionFactory,
-      clientId: String,
+    def recoveringJmsSink[T: JmsEncoder](
+      con: JmsConnection,
       dest: JmsDestination,
-      retryInterval: Duration,
-      encode: JmsEncoder[T]
-    ) = for {
-      sinkFact <- RecoveringJmsSink.make[T](cf, clientId, encode)
-      s        <- sinkFact.sink(dest, retryInterval)
-    } yield s
+      retryInterval: Duration
+    ): ZSink[Any, Nothing, Message, Message, Unit] = ???
+
+    //   {
+    //   def produceOne(p: JmsProducer) = buffer.take.flatMap { s: FlowEnvelope[_, T] =>
+    //     JmsApi.send(s, p, dest, encode)
+    //   }
+
+    //   def produceForever: ZIO[JmsEnv, Nothing, Unit] = {
+    //     val part = for {
+    //       _      <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
+    //       conMgr <- ZIO.service[JmsConnectionManager.JmsConnectionMangerSvc]
+    //       con    <- conMgr.connect(factory, clientId)
+    //       _      <- createSession(con).use { jmsSess =>
+    //                   createProducer(jmsSess).use { p =>
+    //                     for {
+    //                       f <- produceOne(p).forever.fork
+    //                       _ <- f.join
+    //                     } yield ()
+    //                   }
+    //                 }
+    //     } yield ()
+    //     part.catchAll { _ =>
+    //       for {
+    //         f <- produceForever.schedule(Schedule.duration(retryInterval)).fork
+    //         _ <- f.join
+    //       } yield ()
+    //     }
+    //   }
+    //   for {
+    //     _ <- produceForever.fork
+    //     s <- ZIO.succeed(ZSink.foreach(msg => buffer.offer(msg)))
+    //   } yield s
+    // }
 
     private def logException(msg: => String, t: Throwable) = logger.warn(s"$msg : ${t.getMessage()}")
 

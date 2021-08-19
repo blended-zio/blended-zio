@@ -7,7 +7,7 @@ import javax.jms._
 import zio._
 import zio.blocking._
 import zio.clock._
-import zio.logging._
+import zio.logging.Logger
 import zio.stream._
 
 import blended.zio.streams._
@@ -32,17 +32,19 @@ object JmsConnectionManager {
   }
 
   lazy val live = for {
+    jmsApi <- ZIO.service[JmsApiSvc]
     clock  <- ZIO.environment[Clock]
     logger <- ZIO.service[Logger[String]]
     cons   <- Ref.make(Map.empty[String, JmsConnection])
     rec    <- Ref.make[Chunk[String]](Chunk.empty)
     s      <- Semaphore.make(1)
-  } yield DefaultConnectionManager(clock, logger, rec, cons, s)
+  } yield DefaultConnectionManager(jmsApi, clock, logger, rec, cons, s)
 
   /**
    * A connection factory which reuses the underlying JMS connection as much as possible.
    */
   final case class DefaultConnectionManager private (
+    jmsApi: JmsApiSvc,
     clock: Clock,
     logger: Logger[String],
     // Keep a list of connection id's currently in recovery
@@ -63,7 +65,10 @@ object JmsConnectionManager {
     ) = sem.withPermit(
       for {
         cid <- ZIO.effectTotal(conCacheId(cf)(clientId))
-        con <- getConnection(cid).orElse(checkedConnect(cf, clientId).provideLayer(Blocking.live ++ Clock.live))
+        con <- getConnection(cid).flatMap {
+                 case None    => checkedConnect(cf, clientId).provideLayer(Blocking.live ++ Clock.live)
+                 case Some(c) => ZIO.succeed(c)
+               }
       } yield con
     )
     // end:doctag<connect>
@@ -153,21 +158,23 @@ object JmsConnectionManager {
                 .map(s => FlowEnvelope.make(s))
             )
 
-          createSession(con).use(jmsSess =>
-            createProducer(jmsSess).use(prod => stream.run(jmsSink(prod, keepAlive.dest, stringEnvelopeEncoder)))
-          )
+          jmsApi
+            .createSession(con)
+            .use(jmsSess =>
+              jmsApi.createProducer(jmsSess).use(prod => stream.run(jmsApi.jmsSink(prod, keepAlive.dest)))
+            )
         }
         // end:doctag<sender>
 
         // doctag<receiver>
-        def startKeepAliveReceiver(kam: KeepAliveMonitor) = createSession(con).use { jmsSess =>
-          createConsumer(jmsSess, keepAlive.dest).use(cons => jmsStream(cons).foreach(_ => kam.alive))
+        def startKeepAliveReceiver(kam: KeepAliveMonitor) = jmsApi.createSession(con).use { jmsSess =>
+          jmsApi.createConsumer(jmsSess, keepAlive.dest).use(cons => jmsApi.jmsStream(cons).foreach(_ => kam.alive))
         }
         // end:doctag<receiver>
 
         // doctag<monitor>
         val run = for {
-          kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed)
+          kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed, logger)
           send <- startKeepAliveSender.fork
           rec  <- startKeepAliveReceiver(kam).fork
           _    <- kam.run(keepAlive.interval)
