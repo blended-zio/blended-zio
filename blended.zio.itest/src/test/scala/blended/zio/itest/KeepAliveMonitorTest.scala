@@ -22,17 +22,19 @@ object KeepAliveMonitorTest extends DefaultRunnableSpec {
   ).provideCustomLayer(logEnv)) @@ timed @@ timeout(3.seconds) @@ parallel
 
   private val signalKeepAlive = testM("signal when the maximum keep alive is reached")(for {
-    kam <- DefaultKeepAliveMonitor.make("signal", 3)
-    _   <- kam.run(10.millis)
-    cnt <- kam.current
+    logger <- ZIO.service[Logger[String]]
+    kam    <- DefaultKeepAliveMonitor.make("signal", 3, logger)
+    _      <- kam.run(10.millis)
+    cnt    <- kam.current
   } yield assert(cnt)(equalTo(3)))
 
   private val keepAlive = testM("do not signal when regular alive events are triggered")(for {
-    kam <- DefaultKeepAliveMonitor.make("alive", 3)
-    _   <- kam.alive.schedule(Schedule.spaced(20.millis)).fork
-    f   <- kam.run(50.millis).fork
-    _   <- f.interrupt.schedule(Schedule.duration(500.millis))
-    cnt <- kam.current
+    logger <- ZIO.service[Logger[String]]
+    kam    <- DefaultKeepAliveMonitor.make("alive", 3, logger)
+    _      <- kam.alive.schedule(Schedule.spaced(20.millis)).fork
+    f      <- kam.run(50.millis).fork
+    _      <- f.interrupt.schedule(Schedule.duration(500.millis))
+    cnt    <- kam.current
   } yield assert(cnt)(isLessThan(3)))
 
 }

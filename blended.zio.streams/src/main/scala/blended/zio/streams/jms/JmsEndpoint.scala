@@ -9,6 +9,7 @@ import zio.logging.{ Logging, Logger }
 
 import blended.zio.streams._
 import blended.zio.streams.jms.JmsApi._
+import blended.zio.streams.jms.JmsConnectionManager._
 import blended.zio.streams.jms.JmsApiObject._
 
 object JmsEndpoint {
@@ -20,7 +21,7 @@ object JmsEndpoint {
     receive: Boolean,
     selector: Option[JmsMessageSelector]
   ) {
-    val id = s"Endpoint-${cf.id}-${clientId}-${dest}"
+    val id = s"JmsEndpoint-${cf.id}-${clientId}-${dest}"
   }
 
   // Should return ZLayer ??
@@ -30,21 +31,28 @@ object JmsEndpoint {
     dest: JmsDestination,
     receive: Boolean = true,
     selector: Option[JmsMessageSelector] = None
-  ): ZManaged[Logging, Throwable, Endpoint[String, JmsMessageBody]] = (for {
+  ): ZManaged[Logging with Has[JmsApiSvc] with Has[JmsConnectionManagerSvc], Throwable, Endpoint[
+    String,
+    JmsMessageBody
+  ]] = (for {
     logger <- ZIO.service[Logger[String]]
+    conMgr <- ZIO.service[JmsConnectionManagerSvc]
+    jmsApi <- ZIO.service[JmsApiSvc]
     ep     <- ZIO.effectTotal(JmsEndpoint(cf, clientId, dest, receive, selector))
-    con    <- connector(ep, logger)
+    con    <- connector(ep, conMgr, jmsApi, logger)
     ep     <- Endpoint.make(ep.id, con, Endpoint.defaultEndpointConfig)
     _      <- ep.connect
-  } yield ep).toManaged(ep => ep.disconnect.catchAll(_ => ZIO.unit))
+  } yield ep).toManaged(ep => ep.disconnect.ignore)
 
   private def connector(
     ep: JmsEndpoint,
+    conMgr: JmsConnectionManagerSvc,
+    jmsApi: JmsApiSvc,
     logger: Logger[String]
   ): ZIO[Any, Throwable, Connector[String, JmsMessageBody]] =
     for {
       state <- RefM.make[Option[JmsEndpointState]](None)
-      con    = new JmsConnector(ep, logger, state)
+      con    = new JmsConnector(ep, conMgr, jmsApi, logger, state)
     } yield new Connector[String, JmsMessageBody] {
       override def start: ZIO[Any, Throwable, Unit] = con.start
 
@@ -69,18 +77,22 @@ object JmsEndpoint {
 
   sealed private class JmsConnector(
     ep: JmsEndpoint,
+    conMgr: JmsConnectionManagerSvc,
+    jmsApi: JmsApiSvc,
     logger: Logger[String],
     state: RefM[Option[JmsEndpointState]]
   ) {
+
+    import blended.zio.streams.jms.JmsApi.JmsEncoder._
 
     def start = state.update {
       _ match {
         case None        =>
           for {
-            con  <- JmsApi.connect(ep.cf, ep.clientId)
-            sess <- JmsApi.createSession_(con)
-            cons <- if (ep.receive) JmsApi.createConsumer_(sess, ep.dest).map(Some(_)) else ZIO.none
-            prod <- JmsApi.createProducer_(sess)
+            con  <- conMgr.connect(ep.cf, ep.clientId)
+            sess <- jmsApi.createSession_(con)
+            cons <- if (ep.receive) jmsApi.createConsumer_(sess, ep.dest).map(Some(_)) else ZIO.none
+            prod <- jmsApi.createProducer_(sess)
             state = JmsEndpointState(sess, cons, prod)
             _    <- logger.info(s"Created JMS endpoint state [$state]")
           } yield Some(state)
@@ -95,10 +107,10 @@ object JmsEndpoint {
             _ <- logger.info(s"Closing JMS endpoint state [$v]")
             _ <- v.consumer match {
                    case None    => ZIO.unit
-                   case Some(c) => JmsApi.closeConsumer_(c)
+                   case Some(c) => jmsApi.closeConsumer_(c)
                  }
-            _ <- JmsApi.closeProducer_(v.producer)
-            _ <- JmsApi.closeSession_(v.session)
+            _ <- jmsApi.closeProducer_(v.producer)
+            _ <- jmsApi.closeSession_(v.session)
           } yield None
         case None    => ZIO.none
       }
@@ -111,7 +123,7 @@ object JmsEndpoint {
                     case Some(v) =>
                       v.consumer match {
                         case None    => ZIO.none
-                        case Some(c) => JmsApi.receive(c)
+                        case Some(c) => jmsApi.receive(c)
                       }
                   }
       maybeEnv  = maybeMsg.map { m =>
@@ -129,33 +141,11 @@ object JmsEndpoint {
       cs  <- state.get
       res <- cs match {
                case None    => ZIO.fail(new IllegalStateException(s"Endpoint [${ep.id}] is currently not connected"))
-               case Some(v) => JmsApi.send[JmsMessageBody](env, v.producer, ep.dest, encoder) *> ZIO.effectTotal(env)
+               case Some(v) =>
+                 jmsApi.send[FlowEnvelope[String, JmsMessageBody]](env, v.producer, ep.dest)(envDecoder) *> ZIO
+                   .effectTotal(env)
              }
     } yield res
-
-    private val encoder: JmsEncoder[JmsMessageBody] = p =>
-      env =>
-        (effectBlocking {
-          val msg = env.content match {
-            case JmsMessageBody.Text(s)   => p.session.session.createTextMessage(s)
-            case JmsMessageBody.Binary(b) =>
-              val res = p.session.session.createBytesMessage()
-              res.writeBytes(b.toArray)
-              res
-            case JmsMessageBody.Empty     => p.session.session.createMessage()
-          }
-          env.header.entries.foreach { case (k, v) => msg.setObjectProperty(k, v.value) }
-          msg
-        }).mapError {
-          _ match {
-            case je: JMSException => je
-            case t: Exception     =>
-              val res = new JMSException(t.getMessage())
-              res.setLinkedException(t)
-              res
-            case o                => new JMSException(o.getMessage())
-          }
-        }
 
     private val extractBytes: BytesMessage => Chunk[Byte] = { bm =>
       val buf = new Array[Byte](bm.getBodyLength().toInt)

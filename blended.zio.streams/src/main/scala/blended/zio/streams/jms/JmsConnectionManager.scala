@@ -16,7 +16,7 @@ import blended.zio.streams.jms.JmsApiObject._
 
 object JmsConnectionManager {
 
-  trait JmsConnectionMangerSvc {
+  trait JmsConnectionManagerSvc {
     // Create a connection for a given Connection Factory with a given client id.
     def connect(
       cf: JmsConnectionFactory,
@@ -31,14 +31,30 @@ object JmsConnectionManager {
     def shutdown: ZIO[Any, Nothing, Unit]
   }
 
-  lazy val live = for {
-    jmsApi <- ZIO.service[JmsApiSvc]
-    clock  <- ZIO.environment[Clock]
-    logger <- ZIO.service[Logger[String]]
-    cons   <- Ref.make(Map.empty[String, JmsConnection])
-    rec    <- Ref.make[Chunk[String]](Chunk.empty)
-    s      <- Semaphore.make(1)
-  } yield DefaultConnectionManager(jmsApi, clock, logger, rec, cons, s)
+  def connect(cf: JmsConnectionFactory, clientId: String) =
+    ZIO.serviceWith[JmsConnectionManagerSvc](_.connect(cf, clientId))
+
+  def reconnect(con: JmsConnection, cause: Option[Throwable]) =
+    ZIO.serviceWith[JmsConnectionManagerSvc](_.reconnect(con, cause))
+
+  def reconnect(id: String, cause: Option[Throwable]) =
+    ZIO.serviceWith[JmsConnectionManagerSvc](_.reconnect(id, cause))
+
+  def close(con: JmsConnection) =
+    ZIO.serviceWith[JmsConnectionManagerSvc](_.close(con))
+
+  def shutdown =
+    ZIO.serviceWith[JmsConnectionManagerSvc](_.shutdown)
+
+  lazy val live: ZLayer[Clock with Has[JmsApiSvc] with Has[Logger[String]], Nothing, Has[JmsConnectionManagerSvc]] =
+    (for {
+      jmsApi <- ZIO.service[JmsApiSvc]
+      clock  <- ZIO.environment[Clock]
+      logger <- ZIO.service[Logger[String]]
+      cons   <- Ref.make(Map.empty[String, JmsConnection])
+      rec    <- Ref.make[Chunk[String]](Chunk.empty)
+      s      <- Semaphore.make(1)
+    } yield DefaultConnectionManager(jmsApi, clock, logger, rec, cons, s)).toLayer
 
   /**
    * A connection factory which reuses the underlying JMS connection as much as possible.
@@ -53,7 +69,9 @@ object JmsConnectionManager {
     conns: Ref[Map[String, JmsConnection]],
     // A semaphore to access the stored connections
     sem: Semaphore
-  ) extends JmsConnectionMangerSvc {
+  ) extends JmsConnectionManagerSvc {
+
+    import blended.zio.streams.jms.JmsApi.JmsEncoder._
 
     // Just the key to find the desired connection in the cached connections
     private val conCacheId: JmsConnectionFactory => String => String = cf => clientId => s"${cf.id}-$clientId"
@@ -74,7 +92,7 @@ object JmsConnectionManager {
     // end:doctag<connect>
 
     // doctag<reconnect>
-    private[jms] def reconnect(
+    override def reconnect(
       con: JmsConnection,
       cause: Option[Throwable]
     ) = for {
@@ -82,12 +100,12 @@ object JmsConnectionManager {
       cr <- getConnection(con.id)
       _  <- cr match {
               case None    => ZIO.unit
-              case Some(c) => recover(c, cause).provideLayer(Clock.live)
+              case Some(c) => recover(c, cause).provide(clock)
             }
     } yield ()
     // end:doctag<reconnect>
 
-    private[jms] def reconnect(id: String, cause: Option[Throwable]) =
+    override def reconnect(id: String, cause: Option[Throwable]) =
       for {
         c <- getConnection(id)
         _ <- c match {
@@ -150,13 +168,16 @@ object JmsConnectionManager {
 
           val sdf = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss:SSS")
 
-          val stream = ZStream
-            .fromSchedule(Schedule.spaced(keepAlive.interval))
-            .mapM(_ =>
-              currentTime(TimeUnit.MILLISECONDS)
-                .map(t => s"KeepAlive ($con) : ${sdf.format(t)}")
-                .map(s => FlowEnvelope.make(s))
+          val stream: ZStream[Any, Nothing, FlowEnvelope[String, JmsMessageBody]] = (
+            ZStream
+              .fromSchedule(Schedule.spaced(keepAlive.interval))
+              .mapM(_ =>
+                currentTime(TimeUnit.MILLISECONDS)
+                  .map(t => s"KeepAlive ($con) : ${sdf.format(t)}")
+                  .map(s => FlowEnvelope.make(JmsMessageBody.Text(s)))
+              )
             )
+            .provide(clock)
 
           jmsApi
             .createSession(con)
@@ -213,11 +234,11 @@ object JmsConnectionManager {
       // end:doctag<jmsconnect>
     }
 
-    private[jms] def close(c: JmsConnection) = (ZIO.uninterruptible {
+    override def close(c: JmsConnection) = (ZIO.uninterruptible {
       effectBlocking(c.conn.close) *> removeConnection(c)
     } <* logger.debug(s"Closed [$c]")).provideLayer(Blocking.live).refineOrDie { case t: JMSException => t }
 
-    private[jms] def shutdown                = (for {
+    override def shutdown                = (for {
       lc <- conns.get.map(_.view.values)
       _  <- ZIO.foreach(lc)(c => close(c))
     } yield ()).catchAll(_ => ZIO.unit)
