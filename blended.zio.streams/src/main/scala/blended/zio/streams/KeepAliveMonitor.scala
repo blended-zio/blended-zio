@@ -67,10 +67,11 @@ object DefaultKeepAliveMonitor {
   def make(
     name: String,
     allowedKeepAlives: Int,
+    clock: Clock,
     logger: Logger[String]
   ) = for {
     init <- Ref.make[Int](0)
-    impl  = new DefaultKeepAliveMonitor(name, allowedKeepAlives, logger) {
+    impl  = new DefaultKeepAliveMonitor(name, allowedKeepAlives, clock, logger) {
               override private[streams] val missed: Ref[Int] = init
             }
     kam   = new KeepAliveMonitor {
@@ -86,6 +87,7 @@ object DefaultKeepAliveMonitor {
 sealed abstract private class DefaultKeepAliveMonitor private (
   name: String,
   allowedKeepAlives: Int,
+  clock: Clock,
   logger: Logger[String]
 ) {
 
@@ -103,7 +105,7 @@ sealed abstract private class DefaultKeepAliveMonitor private (
 
     def go: ZIO[Any, Nothing, Unit] = ZIO.ifM(missed.updateAndGet(_ + 1).map(_ == allowedKeepAlives))(
       ZIO.unit,
-      (go.schedule(Schedule.duration(interval)).flatMap(_ => ZIO.unit)).provideLayer(Clock.live)
+      (go.schedule(Schedule.duration(interval)).flatMap(_ => ZIO.unit)).provide(clock)
     )
 
     (for {

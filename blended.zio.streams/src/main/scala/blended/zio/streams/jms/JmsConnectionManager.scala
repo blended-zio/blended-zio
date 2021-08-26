@@ -31,7 +31,10 @@ object JmsConnectionManager {
     def shutdown: ZIO[Any, Nothing, Unit]
   }
 
-  def connect(cf: JmsConnectionFactory, clientId: String) =
+  def connect(
+    cf: JmsConnectionFactory,
+    clientId: String
+  ): ZIO[Has[JmsConnectionManagerSvc], JMSException, JmsConnection] =
     ZIO.serviceWith[JmsConnectionManagerSvc](_.connect(cf, clientId))
 
   def reconnect(con: JmsConnection, cause: Option[Throwable]) =
@@ -47,14 +50,14 @@ object JmsConnectionManager {
     ZIO.serviceWith[JmsConnectionManagerSvc](_.shutdown)
 
   lazy val live: ZLayer[Clock with Has[JmsApiSvc] with Has[Logger[String]], Nothing, Has[JmsConnectionManagerSvc]] =
-    (for {
+    ZLayer.fromManaged(ZManaged.make((for {
       jmsApi <- ZIO.service[JmsApiSvc]
       clock  <- ZIO.environment[Clock]
       logger <- ZIO.service[Logger[String]]
       cons   <- Ref.make(Map.empty[String, JmsConnection])
       rec    <- Ref.make[Chunk[String]](Chunk.empty)
       s      <- Semaphore.make(1)
-    } yield DefaultConnectionManager(jmsApi, clock, logger, rec, cons, s)).toLayer
+    } yield DefaultConnectionManager(jmsApi, clock, logger, rec, cons, s)))(mgr => mgr.shutdown))
 
   /**
    * A connection factory which reuses the underlying JMS connection as much as possible.
@@ -83,10 +86,12 @@ object JmsConnectionManager {
     ) = sem.withPermit(
       for {
         cid <- ZIO.effectTotal(conCacheId(cf)(clientId))
-        con <- getConnection(cid).flatMap {
-                 case None    => checkedConnect(cf, clientId).provideLayer(Blocking.live ++ Clock.live)
-                 case Some(c) => ZIO.succeed(c)
-               }
+        con <-
+          getConnection(cid).flatMap {
+            case None    =>
+              checkedConnect(cf, clientId).provideLayer(Blocking.live ++ Clock.live)
+            case Some(c) => ZIO.succeed(c)
+          }
       } yield con
     )
     // end:doctag<connect>
@@ -195,7 +200,8 @@ object JmsConnectionManager {
 
         // doctag<monitor>
         val run = for {
-          kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed, logger)
+          clk  <- ZIO.environment[Clock]
+          kam  <- DefaultKeepAliveMonitor.make(s"${con.id}-KeepAlive", keepAlive.allowed, clk, logger)
           send <- startKeepAliveSender.fork
           rec  <- startKeepAliveReceiver(kam).fork
           _    <- kam.run(keepAlive.interval)

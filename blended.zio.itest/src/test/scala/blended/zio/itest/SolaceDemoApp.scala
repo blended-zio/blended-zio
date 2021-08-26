@@ -8,7 +8,6 @@ import zio._
 import zio.clock._
 import zio.console._
 import zio.duration._
-import zio.logging.slf4j._
 import zio.stream.ZStream
 
 import blended.zio.streams._
@@ -23,18 +22,13 @@ object SolaceDemoApp extends App {
 
   private val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSS")
 
-  private val logEnv = ZEnv.live ++ Slf4jLogger.make((_, message) => message)
-
-  private val combinedEnv = logEnv ++ defaultJmsEnv(logEnv)
-  // end:doctag<layer>
-
   // doctag<stream>
   private val stream = ZStream
     .fromSchedule(Schedule.spaced(10.millis).jittered)
     .mapM(_ =>
       currentTime(TimeUnit.MILLISECONDS)
         .map(sdf.format)
-        .map(s => FlowEnvelope.make(s))
+        .map(s => FlowEnvelope.make(JmsMessageBody.Text(s)))
     )
   // end:doctag<stream>
 
@@ -55,9 +49,7 @@ object SolaceDemoApp extends App {
 
   // doctag<producer>
   private def producer(con: JmsConnection) =
-    createSession(con).use(session =>
-      createProducer(session).use(prod => stream.run(jmsSink(prod, testDest, stringEnvelopeEncoder)))
-    )
+    createSession(con).use(session => createProducer(session).use(prod => stream.run(jmsSink[FlowEnvelope[String, JmsMessageBody]](prod, testDest))))
   // end:doctag<producer>
 
   // doctag<consumer>
@@ -72,18 +64,17 @@ object SolaceDemoApp extends App {
   // doctag<program>
   private val program =
     for {
-      conMgr <- ZIO.service[JmsConnectionManager.Service]
-      con    <- conMgr.connect(cf, "zio")
-      f      <- getStrLn.fork
-      _      <- consumer(con).fork
-      _      <- producer(con).fork
-      _      <- f.join *> conMgr.close(con)
+      con <- JmsConnectionManager.connect(cf, "solace")
+      f   <- getStrLn.fork
+      _   <- consumer(con).fork
+      _   <- producer(con).fork
+      _   <- f.join *> JmsConnectionManager.shutdown
     } yield ()
   // end:doctag<program>
 
   // doctag<run>
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = program
-    .provideCustomLayer(combinedEnv)
+    .provideCustomLayer(JmsTestEnv.withoutBroker)
     .catchAllCause(c => putStrLn(c.prettyPrint))
     .exitCode
   // end:doctag<run>

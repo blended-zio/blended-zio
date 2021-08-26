@@ -61,17 +61,15 @@ object JmsApi {
   trait JmsApiSvc {
     def createSession_(con: JmsConnection): ZIO[Any, JMSException, JmsSession]
     def closeSession_(js: JmsSession): ZIO[Any, Nothing, Unit]
-    def createSession(con: JmsConnection): ZManaged[Any, JMSException, JmsSession] =
-      ZManaged.make(createSession_(con))(closeSession_(_))
+    def createSession(con: JmsConnection): ZManaged[Any, JMSException, JmsSession]
 
     def createProducer_(js: JmsSession): ZIO[Any, JMSException, JmsProducer]
     def closeProducer_(prod: JmsProducer): ZIO[Any, Nothing, Unit]
-    def createProducer(js: JmsSession) = ZManaged.make(createProducer_(js))(closeProducer_(_))
+    def createProducer(js: JmsSession): ZManaged[Any, JMSException, JmsProducer]
 
     def createConsumer_(js: JmsSession, dest: JmsDestination): ZIO[Any, JMSException, JmsConsumer]
     def closeConsumer_(cons: JmsConsumer): ZIO[Any, Nothing, Unit]
-    def createConsumer(js: JmsSession, dest: JmsDestination) =
-      ZManaged.make(createConsumer_(js, dest))(closeConsumer_(_))
+    def createConsumer(js: JmsSession, dest: JmsDestination): ZManaged[Any, JMSException, JmsConsumer]
 
     def send[T: JmsEncoder](
       content: T,
@@ -81,26 +79,24 @@ object JmsApi {
 
     def receive(cons: JmsConsumer): ZIO[Any, JMSException, Option[Message]]
 
-    def jmsStream(cons: JmsConsumer) =
-      ZStream.repeatEffect(receive(cons)).collect { case Some(m) => m }
+    def jmsStream(cons: JmsConsumer): ZStream[Any, JMSException, Message]
 
     def jmsSink[T: JmsEncoder](
       prod: JmsProducer,
       dest: JmsDestination
-    )                                =
-      ZSink.foreach[Any, JMSException, T](c => send[T](c, prod, dest))
+    ): ZSink[Any, JMSException, T, T, Unit]
 
     def recoveringJmsStream(
       con: JmsConnection,
-      retryInterval: Duration,
-      dest: JmsDestination
+      dest: JmsDestination,
+      retryInterval: Duration
     ): ZStream[Any, Nothing, Message]
 
     def recoveringJmsSink[T: JmsEncoder](
       con: JmsConnection,
       dest: JmsDestination,
       retryInterval: Duration
-    ): ZSink[Any, Nothing, Message, Message, Unit]
+    ): ZSink[Any, Nothing, T, T, Unit]
   }
 
   val default: ZLayer[Logging with Has[RuntimeIdSvc], Nothing, Has[JmsApiSvc]] =
@@ -110,26 +106,65 @@ object JmsApi {
       .map { case (logger, idSvc) => JmsApiImpl(logger, idSvc) }
       .toLayer
 
-  def createSession_(con: JmsConnection) = ZIO.serviceWith[JmsApiSvc](_.createSession_(con))
-  def closeSession_(js: JmsSession)      = ZIO.serviceWith[JmsApiSvc](_.closeSession_(js))
-  def createSession(con: JmsConnection)  = ZIO.service[JmsApiSvc].map(_.createSession(con))
+  def createSession_(con: JmsConnection): ZIO[Has[JmsApiSvc], JMSException, JmsSession] =
+    ZIO.serviceWith[JmsApiSvc](_.createSession_(con))
 
-  def createProducer_(js: JmsSession)   = ZIO.serviceWith[JmsApiSvc](_.createProducer_(js))
-  def closeProducer_(prod: JmsProducer) = ZIO.serviceWith[JmsApiSvc](_.closeProducer_(prod))
-  def createProducer(js: JmsSession)    = ZIO.service[JmsApiSvc].map(_.createProducer(js))
+  def closeSession_(js: JmsSession): ZIO[Has[JmsApiSvc], Nothing, Unit] =
+    ZIO.serviceWith[JmsApiSvc](_.closeSession_(js))
 
-  def createConsumer_(js: JmsSession, dest: JmsDestination) = ZIO.serviceWith[JmsApiSvc](_.createConsumer_(js, dest))
-  def closeConsumer_(cons: JmsConsumer)                     = ZIO.serviceWith[JmsApiSvc](_.closeConsumer_(cons))
-  def createConsumer(js: JmsSession, dest: JmsDestination)  = ZIO.service[JmsApiSvc].map(_.createConsumer(js, dest))
+  def createSession(con: JmsConnection): ZManaged[Has[JmsApiSvc], JMSException, JmsSession] =
+    ZManaged.accessManaged[Has[JmsApiSvc]](_.get.createSession(con))
 
-  def send[T: JmsEncoder](content: T, prod: JmsProducer, dest: JmsDestination) =
+  def createProducer_(js: JmsSession): ZIO[Has[JmsApiSvc], JMSException, JmsProducer] =
+    ZIO.serviceWith[JmsApiSvc](_.createProducer_(js))
+
+  def closeProducer_(prod: JmsProducer): ZIO[Has[JmsApiSvc], Nothing, Unit] =
+    ZIO.serviceWith[JmsApiSvc](_.closeProducer_(prod))
+
+  def createProducer(js: JmsSession): ZManaged[Has[JmsApiSvc], JMSException, JmsProducer] =
+    ZManaged.accessManaged[Has[JmsApiSvc]](_.get.createProducer(js))
+
+  def createConsumer_(js: JmsSession, dest: JmsDestination): ZIO[Has[JmsApiSvc], JMSException, JmsConsumer] =
+    ZIO.serviceWith[JmsApiSvc](_.createConsumer_(js, dest))
+
+  def closeConsumer_(cons: JmsConsumer): ZIO[Has[JmsApiSvc], Nothing, Unit] =
+    ZIO.serviceWith[JmsApiSvc](_.closeConsumer_(cons))
+
+  def createConsumer(js: JmsSession, dest: JmsDestination): ZManaged[Has[JmsApiSvc], JMSException, JmsConsumer] =
+    ZManaged.accessManaged[Has[JmsApiSvc]](_.get.createConsumer(js, dest))
+
+  def send[T: JmsEncoder](
+    content: T,
+    prod: JmsProducer,
+    dest: JmsDestination
+  ): ZIO[Has[JmsApiSvc], JMSException, Unit] =
     ZIO.serviceWith[JmsApiSvc](_.send(content, prod, dest))
-  def receive(cons: JmsConsumer)                                               = ZIO.serviceWith[JmsApiSvc](_.receive(cons))
 
-  def jmsStream(cons: JmsConsumer) = ZStream.fromEffect(ZIO.service[JmsApiSvc]).map(a => a.jmsStream(cons))
+  def receive(cons: JmsConsumer): ZIO[Has[JmsApiSvc], JMSException, Option[Message]] =
+    ZIO.serviceWith[JmsApiSvc](_.receive(cons))
 
-  def jmsSink[T: JmsEncoder](prod: JmsProducer, dest: JmsDestination) =
-    ZIO.service[JmsApiSvc].map(a => a.jmsSink(prod, dest))
+  def jmsStream(cons: JmsConsumer): ZStream[Has[JmsApiSvc], JMSException, Message] =
+    ZStream.service[JmsApiSvc].flatMap(_.jmsStream(cons))
+
+  def recoveringsJmsStream(
+    con: JmsConnection,
+    dest: JmsDestination,
+    retryInterval: Duration
+  ): ZStream[Has[JmsApiSvc], Nothing, Message] =
+    ZStream.service[JmsApiSvc].flatMap(_.recoveringJmsStream(con, dest, retryInterval))
+
+  def jmsSink[T: JmsEncoder](
+    prod: JmsProducer,
+    dest: JmsDestination
+  ): ZSink[Has[JmsApiSvc], JMSException, T, T, Unit] =
+    ZSink.accessSink[Has[JmsApiSvc]](_.get.jmsSink(prod, dest))
+
+  def recoveringJmsSink[T: JmsEncoder](
+    con: JmsConnection,
+    dest: JmsDestination,
+    retryInterval: Duration
+  ): ZSink[Has[JmsApiSvc], Nothing, T, T, Unit] =
+    ZSink.accessSink[Has[JmsApiSvc]](_.get.recoveringJmsSink[T](con, dest, retryInterval))
 
   val mapException: Throwable => JMSException = t =>
     t match {
@@ -162,6 +197,9 @@ object JmsApi {
         _ <- withBlocking(js.session.close()).catchAll(t => logException(s"Error closing JMS session [$js]", t))
       } yield ())
 
+    override def createSession(con: JmsConnection): ZManaged[Any, JMSException, JmsSession] =
+      ZManaged.make(createSession_(con))(js => closeSession_(js))
+
     override def createProducer_(js: JmsSession) = for {
       id <- idSvc.nextId(js.id)
       p  <- withBlocking(
@@ -175,6 +213,9 @@ object JmsApi {
         _ <- logger.debug(s"Closing JMS Producer [$p]")
         _ <- withBlocking(p.producer.close()).catchAll(t => logException(s"Error closing JMS Producer [$p]", t))
       } yield ())
+
+    def createProducer(js: JmsSession): ZManaged[Any, JMSException, JmsProducer] =
+      ZManaged.make(createProducer_(js))(p => closeProducer_(p))
 
     override def createConsumer_(js: JmsSession, dest: JmsDestination) =
       (for {
@@ -195,6 +236,9 @@ object JmsApi {
         _ <- logger.debug(s"Closing JMS Consumer [$c]")
         _ <- withBlocking(c.consumer.close()).catchAll(t => logException(s"Error closing JMS consumer [${c.id}]", t))
       } yield ())
+
+    def createConsumer(js: JmsSession, dest: JmsDestination): ZManaged[Any, JMSException, JmsConsumer] =
+      ZManaged.make(createConsumer_(js, dest))(c => closeConsumer_(c))
 
     // doctag<send>
     def send[T: JmsEncoder](
@@ -222,35 +266,36 @@ object JmsApi {
         .mapError(mapException)
     // end:doctag<receive>
 
+    def jmsStream(cons: JmsConsumer): ZStream[Any, JMSException, Message] =
+      ZStream.repeatEffect(receive(cons)).collect { case Some(m) => m }
+
     def recoveringJmsStream(
       con: JmsConnection,
-      retryInterval: Duration,
-      dest: JmsDestination
+      dest: JmsDestination,
+      retryInterval: Duration
     ): ZStream[Any, Nothing, Message] = {
+      val cons: ZManaged[Any, JMSException, JmsConsumer] = createSession(con).flatMap(js => createConsumer(js, dest))
+      val partial: ZStream[Any, JMSException, Message]   = ZStream.managed(cons).flatMap(cons => jmsStream(cons))
 
-      val partial =
-        createSession(con).use(js => createConsumer(js, dest).use(cons => ZIO.succeed(jmsStream(cons))))
-
-      val complete = ZStream
-        .fromEffect(partial)
-        .flatten
-        .retry(Schedule.duration(retryInterval))
-        .provideLayer(Clock.live)
-
+      val complete =
+        partial
+          .retry(Schedule.duration(retryInterval))
+          .provideLayer(Clock.live)
       complete.catchAll(_ => ZStream.empty)
     }
+
+    def jmsSink[T: JmsEncoder](prod: JmsProducer, dest: JmsDestination): ZSink[Any, JMSException, T, T, Unit] =
+      ZSink.foreach[Any, JMSException, T](c => send[T](c, prod, dest))
 
     def recoveringJmsSink[T: JmsEncoder](
       con: JmsConnection,
       dest: JmsDestination,
       retryInterval: Duration
-    ): ZSink[Any, Nothing, Message, Message, Unit] = ???
-
+    ): ZSink[Any, Nothing, T, T, Unit] = ???
     //   {
     //   def produceOne(p: JmsProducer) = buffer.take.flatMap { s: FlowEnvelope[_, T] =>
     //     JmsApi.send(s, p, dest, encode)
     //   }
-
     //   def produceForever: ZIO[JmsEnv, Nothing, Unit] = {
     //     val part = for {
     //       _      <- log.debug(s"Trying to recover producer for [${factory.id}] with destination [$dest]")
