@@ -37,7 +37,7 @@ object Dependencies {
   val sttp3Core      = "com.softwaremill.sttp.client3" %% "core"                          % vSttp3
   val sttp3Backend   = "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % vSttp3
   val testContainers = "com.dimafeng"                  %% "testcontainers-scala"          % vTestContainers
-  val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.7"
+  val uzHttp         = "org.polynote"                  %% "uzhttp"                        % "0.2.8"
 
   /* --- Convenient dependency groups */
 
