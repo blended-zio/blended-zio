@@ -10,7 +10,6 @@ import zio.logging._
 import zio.stm._
 
 import blended.zio.jmx.JmxObjectName
-import blended.zio.jmx.publish.Nameable._
 
 object ProductMBeanPublisher {
 
@@ -85,14 +84,14 @@ object ProductMBeanPublisher {
     /**
      * Create or update the MBean within JMX with the <code>DynamicMBean</code> representation of the given case class instance.
      */
-    def updateMBean[T <: Product](
+    def updateMBean[T <: Product: Nameable](
       v: T
-    )(implicit f: T => Nameable[T]): ZIO[Any, MBeanPublishException, Unit]
+    ): ZIO[Any, MBeanPublishException, Unit]
 
     /**
      * Remove the registration from JMX for the object name derived from the given case class.
      */
-    def removeMBean[T <: Product](v: T)(implicit f: T => Nameable[T]): ZIO[Any, MBeanPublishException, Unit]
+    def removeMBean[T <: Product: Nameable](v: T): ZIO[Any, MBeanPublishException, Unit]
   }
   // end:doctag<service>
 
@@ -110,14 +109,10 @@ object ProductMBeanPublisher {
       log <- ZIO.service[Logger[String]]
       pub <- ConcurrentMBeanPublisher.make()
       svc  = new Service {
-               override def managedNames: ZIO[Any, Nothing, List[String]] = pub.managedNames
-               override def updateMBean[T <: Product](v: T)(implicit
-                 f: T => Nameable[T]
-               ): ZIO[Any, MBeanPublishException, Unit]                   =
+               override def managedNames: ZIO[Any, Nothing, List[String]]                                    = pub.managedNames
+               override def updateMBean[T <: Product: Nameable](v: T): ZIO[Any, MBeanPublishException, Unit] =
                  pub.updateMBean(v).provide(Has(log))
-               override def removeMBean[T <: Product](v: T)(implicit
-                 f: T => Nameable[T]
-               ): ZIO[Any, MBeanPublishException, Unit]                   =
+               override def removeMBean[T <: Product: Nameable](v: T): ZIO[Any, MBeanPublishException, Unit] =
                  pub.removeMBean(v).provide(Has(log))
              }
       _   <- svcRef.set(Some(svc))
@@ -142,33 +137,38 @@ final class ConcurrentMBeanPublisher private (
   def managedNames: ZIO[Any, Nothing, List[String]] = self.beans.keys.commit
 
   // doctag<methods>
-  def updateMBean[T <: Product](
-    v: T
-  )(implicit f: T => Nameable[T]): ZIO[Logging, MBeanPublishException, Unit] =
+  def updateMBean[T <: Product: Nameable](v: T): ZIO[Logging, MBeanPublishException, Unit] = {
+    val n: Nameable[T] = implicitly[Nameable[T]]
+
     createOrUpdate(v).commit.mapError {
       case mbe: MBeanPublishException                         => mbe
-      case _: javax.management.InstanceAlreadyExistsException => new InstanceAlreadyExistsException[T](v, objectName(v))
+      case _: javax.management.InstanceAlreadyExistsException =>
+        new InstanceAlreadyExistsException[T](v, n.objectName(v))
       case t                                                  => new JmxException(t)
-    } <* log.debug(s"updated MBean with name [${objectName(v)}}] to [$v]")
+    } <* log.debug(s"updated MBean with name [${n.objectName(v)}}] to [$v]")
+  }
 
-  def removeMBean[T <: Product](v: T)(implicit f: T => Nameable[T]): ZIO[Logging, MBeanPublishException, Unit] =
+  def removeMBean[T <: Product: Nameable](v: T): ZIO[Logging, MBeanPublishException, Unit] = {
+    val n = implicitly[Nameable[T]]
+
     self.beans
-      .get(objectName(v).objectName)
+      .get(n.objectName(v).objectName)
       .flatMap {
         case Some(_) =>
           STM.fromTry(Try {
-            try svr.unregisterMBean(new ObjectName(objectName(v).objectName))
+            try svr.unregisterMBean(new ObjectName(n.objectName(v).objectName))
             catch {
               case _: InstanceNotFoundException => // swallow that exception as it may occur in STM retries
             }
-          }) >>> self.beans.delete(objectName(v).objectName)
+          }) >>> self.beans.delete(n.objectName(v).objectName)
         case None    => STM.unit
       }
       .commit
       .mapError {
         case mbe: MBeanPublishException => mbe
         case t                          => new JmxException(t)
-      } <* log.debug(s"Removed MBean with name [${objectName(v)}]")
+      } <* log.debug(s"Removed MBean with name [${n.objectName(v)}]")
+  }
   // end:doctag<methods>
 
   // doctag<helpers>
@@ -181,10 +181,11 @@ final class ConcurrentMBeanPublisher private (
       STM.fail(new IncompatibleJmxUpdateException(bean.getClass, old.beanClass))
     )
 
-  private def createMBean[T <: Product](bean: T)(implicit f: T => Nameable[T]): STM[Throwable, Unit] =
+  private def createMBean[T <: Product: Nameable](bean: T): STM[Throwable, Unit] = {
+    val n = implicitly[Nameable[T]]
     STM
       .fromTry(Try {
-        val on: ObjectName = new ObjectName(objectName(bean).objectName)
+        val on: ObjectName = new ObjectName(n.objectName(bean).objectName)
 
         try svr.unregisterMBean(on)
         catch {
@@ -193,18 +194,21 @@ final class ConcurrentMBeanPublisher private (
 
         val mapped = mapper.mapProduct(bean)
         val b      = new OpenProductMBean(bean.getClass, mapped)
-        svr.registerMBean(b, new ObjectName(objectName(bean).objectName))
+        svr.registerMBean(b, new ObjectName(n.objectName(bean).objectName))
         b
       })
       .flatMap { b =>
-        self.beans.put(objectName(bean).objectName, b)
+        self.beans.put(n.objectName(bean).objectName, b)
       }
+  }
 
-  private def createOrUpdate[T <: Product](bean: T)(implicit f: T => Nameable[T]): STM[Throwable, Unit] =
-    self.beans.get(objectName(bean).objectName).flatMap {
+  private def createOrUpdate[T <: Product: Nameable](bean: T): STM[Throwable, Unit] = {
+    val n = implicitly[Nameable[T]]
+    self.beans.get(n.objectName(bean).objectName).flatMap {
       case Some(e) => updateMBean(e, bean)
       case None    => createMBean(bean)
     }
+  }
   // end:doctag<helpers>
 
 }
