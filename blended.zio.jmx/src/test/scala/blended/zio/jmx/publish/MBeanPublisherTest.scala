@@ -2,8 +2,6 @@ package blended.zio.jmx.publish
 
 import javax.management.InstanceNotFoundException
 
-import scala.annotation.nowarn
-
 import zio._
 import zio.duration._
 import zio.logging.slf4j._
@@ -16,7 +14,7 @@ import blended.zio.jmx.{ JmxObjectName, MBeanServerFacade }
 
 object MBeanPublisherTest extends DefaultRunnableSpec {
 
-  import Nameable._
+  import NameableSyntax._
 
   // doctag<layer>
   private val logSlf4j = Slf4jLogger.make((_, message) => message)
@@ -38,7 +36,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
     pub  <- ZIO.service[ProductMBeanPublisher.Service]
     fac  <- ZIO.service[MBeanServerFacade.Service]
     cc   <- ZIO.succeed(Simple("test1", 0, "Hello Jmx"))
-    info <- pub.updateMBean(cc) >>> fac.mbeanInfo(objectName(cc))
+    info <- pub.updateMBean(cc) >>> fac.mbeanInfo(cc.objectName)
   } yield {
     val keys = info.attributes.value.keys.toList
     assert(keys)(contains("counter")) &&
@@ -54,7 +52,7 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
     cc   <- ZIO.succeed(Simple("test2", 0, "Hello Jmx"))
     _    <- pub.updateMBean(cc)
     _    <- pub.updateMBean(cc.copy(counter = 100, message = "Hello Update"))
-    info <- fac.mbeanInfo(objectName(cc))
+    info <- fac.mbeanInfo(cc.objectName)
   } yield {
     val keys = info.attributes.value.keys.toList
     assert(keys)(contains("counter")) &&
@@ -77,15 +75,14 @@ object MBeanPublisherTest extends DefaultRunnableSpec {
     fac <- ZIO.service[MBeanServerFacade.Service]
     _   <- pub.updateMBean(cc)
     _   <- pub.removeMBean(cc)
-    r   <- fac.mbeanInfo(objectName(cc)).run
+    r   <- fac.mbeanInfo(cc.objectName).run
   } yield assert(r)(failsCause(assertion("type")() { c =>
     c.dieOption.isDefined && c.dieOption.head.isInstanceOf[InstanceNotFoundException]
   })))
 }
 
 object Simple {
-  @nowarn
-  implicit def toNameable(v: Simple): Nameable[Simple] = new Nameable[Simple] {
+  implicit def toNameable: Nameable[Simple] = new Nameable[Simple] {
     override def objectName(x: Simple): JmxObjectName =
       JmxObjectName("blended", Map("type" -> "simple", "name" -> x.name))
   }
@@ -98,8 +95,8 @@ final case class Simple(
 )
 
 object Simple2 {
-  @nowarn
-  implicit def toNameable(v: Simple2): Nameable[Simple2] = new Nameable[Simple2] {
+
+  implicit def toNameable: Nameable[Simple2] = new Nameable[Simple2] {
     override def objectName(x: Simple2): JmxObjectName =
       JmxObjectName("blended", Map("type" -> "simple", "name" -> x.name))
   }
