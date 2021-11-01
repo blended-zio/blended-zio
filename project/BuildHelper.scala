@@ -5,7 +5,7 @@ import BuildInfoKeys._
 import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
-  private val Scala213 = "2.13.6"
+  private val Scala213 = "2.13.7"
 
   private val ScalaDefault = Scala213
 
