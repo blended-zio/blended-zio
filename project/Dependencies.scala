@@ -7,7 +7,7 @@ object Dependencies {
   val vLogback        = "1.2.5"
   val vSolace         = "10.12.0"
   val vSttp3          = "3.3.13"
-  val vTestContainers = "0.39.6"
+  val vTestContainers = "0.39.12"
 
   val vZio        = "1.0.11"
   val vZioConfig  = "1.0.5"
