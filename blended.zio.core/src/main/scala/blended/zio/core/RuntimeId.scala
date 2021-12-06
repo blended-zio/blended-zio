@@ -3,26 +3,22 @@ package blended.zio.core
 import zio._
 import zio.stm._
 
-object RuntimeId {
+trait RuntimeId:
+  def nextId(category: String) : UIO[String]
+end RuntimeId
 
-  type RuntimeIdService = Has[Service]
+object RuntimeId: 
 
-  trait Service {
-    def nextId(category: String): ZIO[Any, Nothing, String]
-  }
+  val Live = TMap.empty[String, Long].commit.map(DefaultRuntimeId.apply)
 
-  def default: ZLayer[Any, Nothing, RuntimeIdService] = ZLayer.fromEffect(makeService)
-
-  private val makeService = for {
-    idMap <- TMap.make[String, Long]().commit
-  } yield new DefaultRuntimeIdService(idMap)
-
-  private class DefaultRuntimeIdService(ids: TMap[String, Long]) extends Service {
-
-    def nextId(id: String): ZIO[Any, Nothing, String] = (for {
+  case class DefaultRuntimeId private[RuntimeId] (ids: TMap[String, Long]) extends RuntimeId: 
+    
+    override def nextId(id: String): ZIO[Any, Nothing, String] = (for {
       nextId <- ids.getOrElse(id, 0L).map(_ + 1)
       res     = s"$nextId"
       _      <- ids.put(id, nextId)
     } yield res).commit
-  }
-}
+
+  end DefaultRuntimeId
+
+end RuntimeId

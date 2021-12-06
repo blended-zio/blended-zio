@@ -3,7 +3,6 @@ package blended.zio.core.evaluator
 import java.util.regex.Pattern
 
 import zio._
-import zio.logging._
 
 // doctag<expression>
 sealed trait StringExpression
@@ -18,14 +17,14 @@ object StringExpression {
   private val startPattern: Pattern = Pattern.compile("\\$\\[([^\\[]*)\\[")
   private val endDelim: String      = "]]"
 
-  def build(input: String): ZIO[Logging, Throwable, StringExpression] = for {
+  def build(input: String): ZIO[Any, Throwable, StringExpression] = for {
     (e, r) <- parse(input, 0, None, input)
     parsed <- if (r.isEmpty())
                 ZIO.succeed(e)
               else
                 ZIO.fail(new InvalidFormatException(input, s"unexpected remainder after parsing [$r]"))
     res    <- simplify(SequencedExpression(flatten(parsed)))
-    _      <- log.debug(s"Parsed ($input) to ($res)")
+    _      <- ZIO.logDebug(s"Parsed ($input) to ($res)")
   } yield res
 
   def asString(expr: StringExpression): ZIO[Any, Nothing, String] = expr match {
@@ -64,8 +63,8 @@ object StringExpression {
     level: Int,
     modString: Option[String],
     orig: String
-  ): ZIO[Logging, Throwable, (StringExpression, String)] = for {
-    _              <- log.trace(s"Parsing ($remaining), level ($level), modString ($modString), orig ($orig)")
+  ): ZIO[Any, Throwable, (StringExpression, String)] = for {
+    _              <- ZIO.logDebug(s"Parsing ($remaining), level ($level), modString ($modString), orig ($orig)")
     endIdx          = if (level == 0) remaining.length else remaining.indexOf(endDelim)
     startM         <- ZIO.effect { val m = startPattern.matcher(remaining); m }
     hasSub          = startM.find() && startM.start() < endIdx
@@ -74,7 +73,7 @@ object StringExpression {
                         parseNoSub(remaining, level, orig),
                         parseSub(remaining, startIdx, startM.group(), startM.group(1), level + 1, orig)
                       )
-    _              <- log.trace(s"Resolved sub expression to ($expr), rest ($rest) level ($level), hasSub ($hasSub)")
+    _              <- ZIO.logDebug(s"Resolved sub expression to ($expr), rest ($rest) level ($level), hasSub ($hasSub)")
     (rp, unparsed) <- ZIO.ifM(ZIO.succeed(rest.isEmpty || !hasSub))(
                         ZIO.succeed((None, rest)),
                         parse(rest, level, None, orig).map { case (e, s) => (Some(e), s) }
@@ -96,14 +95,14 @@ object StringExpression {
     modString: String,
     level: Int,
     orig: String
-  ): ZIO[Logging, Throwable, (StringExpression, String)] = for {
+  ): ZIO[Any, Throwable, (StringExpression, String)] = for {
     prefix <- ZIO.succeed(if (startIdx == 0) None else Some(remaining.substring(0, startIdx)))
     rem     = remaining.substring(startIdx + startGroup.length)
     mods   <- parseMods(modString, Seq.empty, orig)
-    _      <- log.trace(s"Parsing sub remainder ($rem) for sub expression level ($level) with modifiers ($mods)")
+    _      <- ZIO.logDebug(s"Parsing sub remainder ($rem) for sub expression level ($level) with modifiers ($mods)")
     (e, r) <- parse(rem, level, Some(modString), orig)
     result  = if (e.equals(SimpleExpression(""))) SimpleExpression("") else ModifierExpression(mods, e)
-    _      <- log.trace(s"Resolved parsed sub expression ($remaining) to ($result) rest ($r) level ($level)")
+    _      <- ZIO.logDebug(s"Resolved parsed sub expression ($remaining) to ($result) rest ($r) level ($level)")
   } yield (
     (
       prefix match {
@@ -118,7 +117,7 @@ object StringExpression {
     remaining: String,
     level: Int,
     orig: String
-  ): ZIO[Logging, Throwable, (StringExpression, String)] =
+  ): ZIO[Any, Throwable, (StringExpression, String)] =
     if (level == 0) {
       for {
         r <- ZIO.succeed((SimpleExpression(remaining), ""))
@@ -135,13 +134,13 @@ object StringExpression {
                     )
                   } else
                     for {
-                      _    <- log.trace(s"Parsing nosub remainder ($remaining), level ($level)")
+                      _    <- ZIO.logDebug(s"Parsing nosub remainder ($remaining), level ($level)")
                       expr <- ZIO.effect(SimpleExpression(remaining.substring(0, endIdx)))
                     } yield ((expr, remaining.substring(endIdx + endDelim.length)))
       } yield res
 
   // Parse all modifiers for a given expression as a sequence with one String representing each modifier
-  private def parseMods(modString: String, current: Seq[String], orig: String): ZIO[Logging, Throwable, Seq[String]] =
+  private def parseMods(modString: String, current: Seq[String], orig: String): ZIO[Any, Throwable, Seq[String]] =
     if (modString.isEmpty())
       ZIO.succeed(current)
     else

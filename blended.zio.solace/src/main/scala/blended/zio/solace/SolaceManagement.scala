@@ -4,9 +4,6 @@ import java.net.URLEncoder
 import javax.naming.{ Context => NamingContext }
 
 import zio._
-import zio.blocking._
-import zio.duration._
-import zio.logging._
 
 import blended.zio.core.jndi.JNDISupport
 import blended.zio.core.json.JsonSupport
@@ -28,7 +25,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
     getKeys(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", "subscriptionTopic")
 
   def createSubscription(vpn: String, queue: String, subscription: String) = for {
-    _       <- log.info(s"Creating Solace Queue Subscription [$vpn,$queue,$subscription]")
+    _       <- ZIO.logInfo(s"Creating Solace Queue Subscription [$vpn,$queue,$subscription]")
     subJson <- ZIO.effect(
                  jObjectFields(
                    ("msgVpnName", jString(vpn)),
@@ -37,7 +34,7 @@ class SolaceManagement(conn: SolaceMgmtConnection) {
                  )
                )
 
-    res <- ZIO.ifM(queueSubscriptions(vpn, queue).map(_.contains(subscription)))(
+    res <- ZIO.ifZIO(queueSubscriptions(vpn, queue).map(_.contains(subscription)))(
              ZIO.succeed(false),
              performPost(s"${queuesOp(vpn)}/${encode(queue)}/subscriptions", subJson).map(_ => true)
            )

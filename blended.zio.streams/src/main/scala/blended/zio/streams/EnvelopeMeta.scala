@@ -45,7 +45,7 @@ final class EnvelopeMetaMap private (private val map: Map[EnvelopeMeta[Any], Any
   def get[V](k: EnvelopeMeta[V]): V = map.get(k.asInstanceOf[EnvelopeMeta[Any]]).fold(k.initial)(_.asInstanceOf[V])
 
   def overwrite[V](k: EnvelopeMeta[V], value: V): EnvelopeMetaMap =
-    new EnvelopeMetaMap(map + (k.asInstanceOf[EnvelopeMeta[Any]] -> value.asInstanceOf[AnyRef]))
+    new EnvelopeMetaMap(map.updated((k.asInstanceOf[EnvelopeMeta[Any]] -> value.asInstanceOf[AnyRef])))
 
   def update[V](k: EnvelopeMeta[V], f: V => V): EnvelopeMetaMap   = overwrite(k, f(get(k)))
 

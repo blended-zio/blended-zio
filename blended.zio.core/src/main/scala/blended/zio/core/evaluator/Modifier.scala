@@ -5,7 +5,7 @@ import zio._
 import blended.zio.core.crypto.CryptoSupport
 
 // doctag<modifier>
-trait Modifier {
+sealed trait Modifier {
   def name: String
   def op(s: String, p: String): ZIO[Any, Throwable, String]
 
