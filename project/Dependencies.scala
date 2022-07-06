@@ -9,7 +9,7 @@ object Dependencies {
   val vSttp3          = "3.3.13"
   val vTestContainers = "0.39.6"
 
-  val vZio        = "1.0.11"
+  val vZio        = "1.0.15"
   val vZioConfig  = "1.0.5"
   val vZioLogging = "0.5.11"
   val vZioNio     = "1.0.0-RC9"
