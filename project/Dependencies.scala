@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
 
-  val vAmq            = "5.16.0"
+  val vAmq            = "5.16.6"
   val vJolokia        = "1.6.2"
   val vLogback        = "1.2.5"
   val vSolace         = "10.12.0"
